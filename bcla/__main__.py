@@ -13,12 +13,31 @@ def main() -> None:
                         help="Number of synthetic cycles")
     parser.add_argument("--model", choices=["linear", "power_law", "logarithmic", "all"],
                         default="all", help="Degradation model to fit")
+    parser.add_argument("--csv", type=str,
+                        help="Path to a CSV/TSV file with cycle + capacity columns")
+    parser.add_argument("--cycle-col", default="cycle",
+                        help="Column name for cycle data (default: cycle)")
+    parser.add_argument("--capacity-col", default="capacity",
+                        help="Column name for capacity data (default: capacity)")
+    parser.add_argument("--sep", default=",",
+                        help="CSV separator character (default: comma)")
+    parser.add_argument("--no-normalize", action="store_true",
+                        help="Disable normalization when loading CSV capacity")
     args = parser.parse_args()
 
-    from .datasets import synthetic_lfp
+    from .datasets import synthetic_lfp, load_cycle_data
     from .core import fit_capacity_fade, fit_all_models, best_model
 
-    x, y = synthetic_lfp(cycles=args.cycles)
+    if args.csv:
+        x, y = load_cycle_data(
+            args.csv,
+            cycle_col=args.cycle_col,
+            capacity_col=args.capacity_col,
+            sep=args.sep,
+            normalize=not args.no_normalize,
+        )
+    else:
+        x, y = synthetic_lfp(cycles=args.cycles)
 
     if args.model == "all":
         results = fit_all_models(x, y)

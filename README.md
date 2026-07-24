@@ -41,6 +41,23 @@ python -m bcla --model all
 
 Or open [`notebooks/demo.ipynb`](notebooks/demo.ipynb) for an interactive walk‑through.
 
+You can also point the CLI at a CSV/TSV file:
+
+```bash
+python -m bcla --csv data/cycles.csv --model all
+```
+
+Expected CSV/TSV columns (case sensitive):
+
+- `cycle`: cycle index (int/float)
+- `capacity`: measured capacity (absolute values; normalized internally by default)
+
+CLI column mapping is customizable:
+
+```bash
+python -m bcla --csv data/raw.csv --cycle-col n --capacity-col q --sep ',' --no-normalize
+```
+
 ---
 
 ## Features
@@ -72,6 +89,11 @@ name, best = core.best_model(results)                # picks lowest RMSE
 # 3. Project end‑of‑life
 eol = best.eol_cycle(eol_fraction=0.8)
 print(f"Best model: {name} | EOL ≈ {eol:.0f} cycles")
+
+# 1b. Or load from a file
+cycles, capacity = datasets.load_cycle_data("data/cycles.csv")
+results = core.fit_all_models(cycles, capacity)
+name, best = core.best_model(results)
 
 # 4. Plot
 fig = viz.model_comparison(results)

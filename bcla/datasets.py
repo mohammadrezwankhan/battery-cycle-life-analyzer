@@ -4,6 +4,9 @@ datasets — Built‑in example cycling data and synthetic generators.
 
 from __future__ import annotations
 
+import csv
+from pathlib import Path
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -65,3 +68,81 @@ def synthetic_nmc(cycles: int = 1000,
     capacity += rng.normal(0, noise_std, size=cycles)
     capacity = np.clip(capacity, 0.7, 1.01)
     return x, capacity
+
+
+def load_cycle_data(csv_path: str | Path,
+                    cycle_col: str = "cycle",
+                    capacity_col: str = "capacity",
+                    sep: str = ",",
+                    normalize: bool = True
+                    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """
+    Load cycle-capacity data from a CSV/TSV-like table.
+
+    Parameters
+    ----------
+    csv_path : str | Path
+        Input file path.
+    cycle_col : str
+        Column name for cycle index.
+    capacity_col : str
+        Column name for normalized or raw capacity.
+    sep : str
+        CSV separator character.
+    normalize : bool
+        If True, divide capacities by the first capacity value.
+
+    Returns
+    -------
+    (cycle, capacity) arrays.
+
+    Raises
+    ------
+    FileNotFoundError
+        If `csv_path` does not exist.
+    ValueError
+        If expected columns are missing or rows are malformed.
+    """
+    path = Path(csv_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Could not find dataset file: {path}")
+
+    with path.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter=sep)
+        if reader.fieldnames is None:
+            raise ValueError("Input file is missing a header row.")
+        header = set(reader.fieldnames)
+        required = {cycle_col, capacity_col}
+        missing = required - header
+        if missing:
+            raise ValueError(
+                f"Missing required columns: {', '.join(sorted(missing))}. "
+                f"Available columns: {', '.join(reader.fieldnames)}"
+            )
+
+        cycles: list[float] = []
+        capacity: list[float] = []
+        for row_i, row in enumerate(reader, start=1):
+            try:
+                cycle = float(row[cycle_col])
+                q = float(row[capacity_col])
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"Could not parse row {row_i}: {cycle_col}={row.get(cycle_col)!r}, "
+                    f"{capacity_col}={row.get(capacity_col)!r}"
+                ) from exc
+            cycles.append(cycle)
+            capacity.append(q)
+
+    if len(cycles) == 0:
+        raise ValueError("Input file contains no data rows.")
+
+    cycles_arr = np.asarray(cycles, dtype=float)
+    capacity_arr = np.asarray(capacity, dtype=float)
+
+    if normalize:
+        if capacity_arr.size == 0 or np.isclose(capacity_arr[0], 0.0):
+            raise ValueError("Cannot normalize because first capacity is zero.")
+        capacity_arr = capacity_arr / capacity_arr[0]
+
+    return cycles_arr, capacity_arr
