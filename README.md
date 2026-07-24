@@ -60,6 +60,70 @@ mapping and separators are customizable; `\t` is accepted as an escaped tab:
 python -m bcla --csv data/raw.txt --cycle-col n --capacity-col q --sep '\t' --no-normalize
 ```
 
+## Long-form data schema (v1)
+
+For provenance-aware workflows, use
+`load_cycle_data_long_form()` to keep protocol metadata alongside `(cycle, capacity)`:
+
+```python
+from bcla.datasets import load_cycle_data_long_form
+
+dataset = load_cycle_data_long_form("data/cycle_metadata_example.csv")
+for cell_id in dataset.cell_ids:
+    cycles, capacity = dataset.for_cell(cell_id)
+    print(cell_id, cycles[:3], capacity[:3])
+```
+
+Required columns:
+
+- `cell_id`
+- `cycle`
+- `capacity`
+
+Optional experimental context columns:
+
+- `chemistry`
+- `temperature_c`
+- `c_rate` *(non-negative)*
+- `rest_time_h` *(non-negative)*
+- `cycles_per_day` *(non-negative)*
+- `depth_of_discharge` *(non-negative, fraction 0–1)*
+- `energy_throughput_wh` *(non-negative)*
+- `protocol`
+- `source`
+
+Every optional field is explicit: when a value is missing in a row, it is stored
+as `None` rather than silently defaulted.
+
+The loader validates:
+
+- `cycle` and `capacity` must parse as finite numbers
+- `cycle` and numeric optional fields (when provided) must be non-negative where
+  applicable
+- `cell_id`, `cycle`, `capacity` cannot be missing
+- per-cell summary envelopes (`validation_envelopes`) including:
+  - observed `cycle_range` and `cycle_count`
+  - min/max for `temperature_c`, `c_rate`, `rest_time_h`, `cycles_per_day`,
+    `depth_of_discharge`, and `energy_throughput_wh`
+
+Returned fields:
+
+- `rows`: full observation list with all preserved metadata
+- `schema_version`: schema tag (default `"1"`)
+- `validation_envelopes`: structured per-cell metadata envelope
+- `cycles` / `capacity`: convenience aliases for single-cell files
+- `for_cell(cell_id)`: per-cell arrays for fitting existing API
+
+The empirical fitting API remains unchanged:
+
+```python
+from bcla import core, datasets
+
+dataset = datasets.load_cycle_data_long_form("data/cycle_metadata_example.csv")
+cycles, capacity = dataset.for_cell("LFP-A")
+results = core.fit_all_models(cycles, capacity)
+```
+
 ---
 
 ## Features

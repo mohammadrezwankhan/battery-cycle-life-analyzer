@@ -6,7 +6,12 @@ import numpy as np
 import pytest
 
 from bcla import core
-from bcla.datasets import load_cycle_data, synthetic_lfp
+from bcla.datasets import (
+    LongFormCycleData,
+    load_cycle_data,
+    load_cycle_data_long_form,
+    synthetic_lfp,
+)
 
 
 def test_load_cycle_data_reads_csv_and_normalizes(tmp_path: Path):
@@ -83,6 +88,93 @@ def test_load_cycle_data_rejects_multi_character_separator(tmp_path: Path):
 
     with pytest.raises(ValueError, match="Separator must be one character"):
         load_cycle_data(csv_path, sep="||")
+
+
+def test_load_cycle_data_long_form_multi_cell_with_metadata_and_envelope(tmp_path: Path):
+    csv_path = tmp_path / "long_form.csv"
+    csv_path.write_text(
+        "cell_id,cycle,capacity,chemistry,temperature_c,c_rate,cycles_per_day,"
+        "depth_of_discharge,energy_throughput_wh,protocol,source\n"
+        "LFP-A,2,0.997,LFP,25,0.5,1,0.8,1200,CC,lab\n"
+        "LFP-A,1,1.00,LFP,23,0.5,1,0.8,1000,CC,lab\n"
+        "NMC-B,1,1.01,NMC,35,1.0,2,0.9,1500,CC,test\n"
+        "NMC-B,3,0.99,NMC,36,1.1,2,0.9,1510,CC,test\n"
+    )
+
+    result = load_cycle_data_long_form(csv_path)
+
+    assert isinstance(result, LongFormCycleData)
+    assert result.cell_ids == ("LFP-A", "NMC-B")
+
+    a_cycles, a_capacity = result.for_cell("LFP-A")
+    assert np.allclose(a_cycles, np.array([1.0, 2.0]))
+    assert np.allclose(a_capacity, np.array([1.0, 0.997]))
+
+    envelope_a = result.validation_envelopes["LFP-A"]
+    assert envelope_a["cycle_range"] == (1.0, 2.0)
+    assert envelope_a["temperature_c"] == (23.0, 25.0)
+    assert envelope_a["c_rate"] == (0.5, 0.5)
+
+    envelope_b = result.validation_envelopes["NMC-B"]
+    assert envelope_b["cycle_range"] == (1.0, 3.0)
+    assert envelope_b["cycles_per_day"] == (2.0, 2.0)
+    assert envelope_b["depth_of_discharge"] == (0.9, 0.9)
+
+
+def test_load_cycle_data_long_form_marks_optional_fields_explicitly(tmp_path: Path):
+    csv_path = tmp_path / "minimal_long_form.csv"
+    csv_path.write_text("cell_id,cycle,capacity\nC01,1,1.00\nC01,2,0.95\n")
+
+    result = load_cycle_data_long_form(csv_path)
+    assert len(result.rows) == 2
+    assert all(row["cell_id"] == "C01" for row in result.rows)
+    assert all(row["chemistry"] is None for row in result.rows)
+    assert all(row["temperature_c"] is None for row in result.rows)
+    assert all(row["protocol"] is None for row in result.rows)
+    assert result.cell_ids == ("C01",)
+    assert np.allclose(result.cycles, np.array([1.0, 2.0]))
+    assert np.allclose(result.capacity, np.array([1.0, 0.95]))
+
+
+@pytest.mark.parametrize(
+    "bad_value", ["nan", "inf", "-inf"]
+)
+def test_load_cycle_data_long_form_rejects_invalid_optional_numeric(
+    tmp_path: Path,
+    bad_value: str,
+):
+    csv_path = tmp_path / "bad_optional.csv"
+    csv_path.write_text(
+        "cell_id,cycle,capacity,temperature_c,c_rate\n"
+        f"C1,1,1.00,{bad_value},1.0\n"
+    )
+
+    with pytest.raises(ValueError, match="Non-finite optional value in row 2"):
+        load_cycle_data_long_form(csv_path)
+
+
+def test_load_cycle_data_long_form_rejects_missing_cell_id(tmp_path: Path):
+    csv_path = tmp_path / "missing_cell.csv"
+    csv_path.write_text("cell_id,cycle,capacity\n,1,1.00\n")
+
+    with pytest.raises(ValueError, match="Missing required field in row 2"):
+        load_cycle_data_long_form(csv_path)
+
+
+def test_load_cycle_data_long_form_rejects_negative_cycle(tmp_path: Path):
+    csv_path = tmp_path / "bad_cycle.csv"
+    csv_path.write_text("cell_id,cycle,capacity\nC,-1,1.00\n")
+
+    with pytest.raises(ValueError, match="Negative required value in row 2"):
+        load_cycle_data_long_form(csv_path)
+
+
+def test_load_cycle_data_long_form_rejects_negative_optional(tmp_path: Path):
+    csv_path = tmp_path / "bad_optional.csv"
+    csv_path.write_text("cell_id,cycle,capacity,c_rate\nC,1,1.00,-0.5\n")
+
+    with pytest.raises(ValueError, match="Negative optional value in row 2"):
+        load_cycle_data_long_form(csv_path)
 
 
 def test_synthetic_lfp_is_gradual_without_premature_clipping():

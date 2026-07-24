@@ -1,0 +1,7 @@
+cell_id,cycle,capacity,chemistry,temperature_c,c_rate,rest_time_h,cycles_per_day,depth_of_discharge,energy_throughput_wh,protocol,source
+LFP-A,1,1.000,LFP,20.0,0.5,1.2,0.8,0.85,1200,cccv,synthetic
+LFP-A,100,0.962,LFP,20.0,0.5,1.2,0.8,0.85,1320,cccv,synthetic
+LFP-A,200,0.928,LFP,22.0,0.5,1.2,1.0,0.85,1450,cccv,synthetic
+NMC-B,1,1.000,NMC,30.0,1.0,0.8,1.5,0.80,1700,charge_hold,synthetic
+NMC-B,100,0.942,NMC,30.0,1.0,0.8,1.5,0.80,1760,charge_hold,synthetic
+NMC-B,180,0.910,NMC,32.0,1.2,0.9,1.5,0.80,1810,charge_hold,synthetic

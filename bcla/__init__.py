@@ -14,4 +14,8 @@ datasets    – Load example / built‑in cycling data and CSV helpers
 
 __version__ = "0.1.0"
 
-from .datasets import load_cycle_data  # re-exported convenience helper
+from .datasets import (
+    LongFormCycleData,
+    load_cycle_data,
+    load_cycle_data_long_form,
+)  # re-exported convenience helpers
