@@ -1,6 +1,7 @@
 # Battery Cycle‑Life Analyzer (bcla)
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://python.org)
+[![Tests](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/notebooks/demo.ipynb)
@@ -14,12 +15,28 @@ physics simulations.
 
 ---
 
+## Installation
+
+Requires Python 3.9 or newer. Runtime dependencies are NumPy, SciPy, and
+Matplotlib; `pip` installs them automatically.
+
+```bash
+git clone https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer.git
+cd battery-cycle-life-analyzer
+python -m pip install .
+```
+
+For an editable development installation with pytest:
+
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest
+```
+
 ## Quick start
 
 ```bash
-pip install -e .
-python -m bcla --model all          # fit + plot synthetic LFP data
-pytest tests/ -v                     # run unit tests
+python -m bcla --model all
 ```
 
 Or open [`notebooks/demo.ipynb`](notebooks/demo.ipynb) for an interactive walk‑through.
@@ -61,7 +78,71 @@ fig = viz.model_comparison(results)
 fig.savefig("capacity_fade.png", dpi=150, bbox_inches="tight")
 ```
 
+Remaining useful life at the latest observed cycle is the projected EOL cycle
+minus that cycle:
+
+```python
+current_cycle = cycles[-1]
+rul_cycles = None if eol is None else max(0.0, eol - current_cycle)
+print(f"Projected RUL: {rul_cycles:.0f} cycles" if rul_cycles is not None
+      else "EOL is outside the supported projection window")
+```
+
 ![Model comparison preview](docs/model_comparison_preview.png)
+
+---
+
+## How the models are calculated
+
+The input capacity should be normalized, so an undegraded cell is near
+`Q = 1`. For cycle index `n`, the library fits three empirical models:
+
+| Model | Capacity equation | Parameters |
+|-------|-------------------|------------|
+| Linear | `Q(n) = Q0 - k n` | Initial capacity `Q0`; fade rate `k` |
+| Power law | `Q(n) = Q0 - alpha n^beta` | Scale `alpha`; exponent `beta` |
+| Logarithmic | `Q(n) = Q0 - a ln(1 + b n)` | Scale `a`; rate parameter `b` |
+
+`scipy.optimize.curve_fit` estimates the parameters with bounded nonlinear
+least squares. The initial-capacity bound is `0.5 <= Q0 <= 1.5`; all
+degradation coefficients are constrained to non-negative values. The power-law
+exponent is constrained to `0.1 <= beta <= 2.0`.
+
+For observations `Q_i` and fitted values `Qhat_i`, model quality is reported as:
+
+```text
+RMSE = sqrt(mean((Q_i - Qhat_i)^2))
+R^2  = 1 - sum((Q_i - Qhat_i)^2) / sum((Q_i - mean(Q))^2)
+```
+
+`best_model()` selects the lowest-RMSE fit by default. `eol_cycle(0.8)` then
+finds the first projected cycle where `Q(n) <= 0.8 Q0`. To avoid presenting
+unbounded extrapolation as evidence, the search stops at three times the
+largest observed cycle and returns `None` if the threshold is not reached.
+
+Temperature comparisons use a relative Arrhenius acceleration factor:
+
+```text
+AF = exp[(Ea / kB) (1 / Tref - 1 / T)]
+```
+
+where temperatures are in kelvin, `Ea` is activation energy in electron-volts,
+and `kB` is the Boltzmann constant in eV/K. `AF > 1` indicates faster
+degradation than at the reference temperature.
+
+### Assumptions and limitations
+
+- These are empirical curve fits, not electrochemical or safety models.
+- The bundled LFP and NMC datasets are synthetic demonstrations.
+- EOL projections are sensitive to data quality, model choice, and the
+  extrapolation distance.
+- The current release does not calculate parameter confidence intervals or
+  propagate measurement uncertainty into RUL.
+- The Arrhenius utility compares temperature acceleration independently; it is
+  not coupled to the fitted capacity-fade trajectory.
+
+Use laboratory data representative of the cell, protocol, temperature, and
+operating window before drawing engineering conclusions.
 
 ---
 
@@ -79,6 +160,10 @@ battery-cycle-life-analyzer/
 │   └── demo.ipynb           # Interactive Jupyter demo
 ├── tests/
 │   └── test_core.py         # Pytest unit tests
+├── .github/workflows/
+│   └── tests.yml            # CI across supported Python versions
+├── CONTRIBUTING.md
+├── LICENSE
 ├── pyproject.toml
 ├── setup.py
 ├── Makefile
@@ -95,6 +180,15 @@ battery-cycle-life-analyzer/
 | [PyBaMM](https://github.com/pybamm-team/PyBaMM) | Full physics‑based electrochemical battery simulation (DFN, SPMe, etc.) |
 
 bcla is **complementary** — fit a model to PyBaMM output data, or use it standalone for lab‑test data.
+
+---
+
+## Contributing
+
+Bug reports, focused feature proposals, documentation improvements, and
+validation datasets with clear provenance are welcome. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing, and pull-request
+guidance.
 
 ---
 
