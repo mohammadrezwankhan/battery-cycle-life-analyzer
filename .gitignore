@@ -1,0 +1,28 @@
+# Byte-compiled
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Distribution
+*.egg-info/
+dist/
+build/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+.pytest_cache/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Generated files
+bcla_demo.png
+model_comparison.png
+temperature_effect.png
+chemistry_comparison.png
