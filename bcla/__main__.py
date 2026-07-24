@@ -19,8 +19,11 @@ def main() -> None:
                         help="Column name for cycle data (default: cycle)")
     parser.add_argument("--capacity-col", default="capacity",
                         help="Column name for capacity data (default: capacity)")
-    parser.add_argument("--sep", default=",",
-                        help="CSV separator character (default: comma)")
+    parser.add_argument(
+        "--sep",
+        default=None,
+        help="Separator character; defaults to tab for .tsv/.tab and comma otherwise",
+    )
     parser.add_argument("--no-normalize", action="store_true",
                         help="Disable normalization when loading CSV capacity")
     args = parser.parse_args()

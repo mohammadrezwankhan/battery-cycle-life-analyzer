@@ -73,7 +73,7 @@ def synthetic_nmc(cycles: int = 1000,
 def load_cycle_data(csv_path: str | Path,
                     cycle_col: str = "cycle",
                     capacity_col: str = "capacity",
-                    sep: str = ",",
+                    sep: str | None = None,
                     normalize: bool = True
                     ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """
@@ -87,8 +87,9 @@ def load_cycle_data(csv_path: str | Path,
         Column name for cycle index.
     capacity_col : str
         Column name for normalized or raw capacity.
-    sep : str
-        CSV separator character.
+    sep : str | None
+        Separator character. If None, infer tab for `.tsv`/`.tab` files and
+        comma otherwise. The escaped value ``"\\t"`` is accepted as a tab.
     normalize : bool
         If True, divide capacities by the first capacity value.
 
@@ -107,8 +108,17 @@ def load_cycle_data(csv_path: str | Path,
     if not path.exists():
         raise FileNotFoundError(f"Could not find dataset file: {path}")
 
-    with path.open("r", newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter=sep)
+    if sep is None:
+        delimiter = "\t" if path.suffix.lower() in {".tsv", ".tab"} else ","
+    else:
+        delimiter = "\t" if sep == r"\t" else sep
+        if len(delimiter) != 1:
+            raise ValueError(
+                "Separator must be one character or the escaped tab value '\\t'."
+            )
+
+    with path.open("r", newline="", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f, delimiter=delimiter)
         if reader.fieldnames is None:
             raise ValueError("Input file is missing a header row.")
         header = set(reader.fieldnames)
@@ -122,7 +132,7 @@ def load_cycle_data(csv_path: str | Path,
 
         cycles: list[float] = []
         capacity: list[float] = []
-        for row_i, row in enumerate(reader, start=1):
+        for row_i, row in enumerate(reader, start=2):
             try:
                 cycle = float(row[cycle_col])
                 q = float(row[capacity_col])
@@ -131,6 +141,12 @@ def load_cycle_data(csv_path: str | Path,
                     f"Could not parse row {row_i}: {cycle_col}={row.get(cycle_col)!r}, "
                     f"{capacity_col}={row.get(capacity_col)!r}"
                 ) from exc
+            if not np.isfinite(cycle) or not np.isfinite(q):
+                raise ValueError(
+                    f"Non-finite value in row {row_i}: "
+                    f"{cycle_col}={row.get(cycle_col)!r}, "
+                    f"{capacity_col}={row.get(capacity_col)!r}"
+                )
             cycles.append(cycle)
             capacity.append(q)
 

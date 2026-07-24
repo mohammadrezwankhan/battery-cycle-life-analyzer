@@ -45,6 +45,7 @@ You can also point the CLI at a CSV/TSV file:
 
 ```bash
 python -m bcla --csv data/cycles.csv --model all
+python -m bcla --csv data/cycles.tsv --model all
 ```
 
 Expected CSV/TSV columns (case sensitive):
@@ -52,10 +53,11 @@ Expected CSV/TSV columns (case sensitive):
 - `cycle`: cycle index (int/float)
 - `capacity`: measured capacity (absolute values; normalized internally by default)
 
-CLI column mapping is customizable:
+Files ending in `.tsv` or `.tab` use a tab delimiter automatically. CLI column
+mapping and separators are customizable; `\t` is accepted as an escaped tab:
 
 ```bash
-python -m bcla --csv data/raw.csv --cycle-col n --capacity-col q --sep ',' --no-normalize
+python -m bcla --csv data/raw.txt --cycle-col n --capacity-col q --sep '\t' --no-normalize
 ```
 
 ---
@@ -67,9 +69,10 @@ python -m bcla --csv data/raw.csv --cycle-col n --capacity-col q --sep ',' --no-
 | **Degradation models** | Linear, power‑law (LFP‑style), logarithmic — all with scipy curve_fit |
 | **Automatic best‑fit** | `bcla.core.best_model()` picks the lowest‑RMSE model |
 | **EOL projection** | `FitResult.eol_cycle()` estimates when capacity hits any threshold |
-| **Temperature acceleration** | Arrhenius‑based `acceleration_factor()` to compare operating temperatures |
+| **Temperature acceleration** | Arrhenius‑based `arrhenius_acceleration_factor()` to compare operating temperatures |
 | **Publication plots** | Matplotlib figures with ready‑to‑save PNG output at 150+ DPI |
 | **Built‑in datasets** | Synthetic LFP and NMC cycling data for instant demo |
+| **CSV/TSV import** | Load external cycle-capacity tables with normalization and validation |
 | **CLI + Python API** | Use from the terminal or import as a library |
 
 ---
@@ -80,7 +83,10 @@ python -m bcla --csv data/raw.csv --cycle-col n --capacity-col q --sep ',' --no-
 from bcla import core, viz, datasets
 
 # 1. Load data
-cycles, capacity = datasets.synthetic_lfp(cycles=1500)
+cycles, capacity = datasets.synthetic_nmc(cycles=1000)
+
+# Or load cycle-capacity data from a file
+# cycles, capacity = datasets.load_cycle_data("data/cycles.csv")
 
 # 2. Fit all models
 results = core.fit_all_models(cycles, capacity)
@@ -88,12 +94,9 @@ name, best = core.best_model(results)                # picks lowest RMSE
 
 # 3. Project end‑of‑life
 eol = best.eol_cycle(eol_fraction=0.8)
-print(f"Best model: {name} | EOL ≈ {eol:.0f} cycles")
-
-# 1b. Or load from a file
-cycles, capacity = datasets.load_cycle_data("data/cycles.csv")
-results = core.fit_all_models(cycles, capacity)
-name, best = core.best_model(results)
+print(f"Best model: {name}")
+print(f"Projected EOL: {eol:.0f} cycles" if eol is not None
+      else "EOL is outside the supported projection window")
 
 # 4. Plot
 fig = viz.model_comparison(results)
@@ -176,12 +179,13 @@ battery-cycle-life-analyzer/
 │   ├── __init__.py
 │   ├── core.py              # Degradation models & curve fitting
 │   ├── viz.py               # Matplotlib plotting helpers
-│   ├── datasets.py          # Synthetic data generators
+│   ├── datasets.py          # Synthetic data and CSV/TSV import
 │   └── __main__.py          # CLI entry point
 ├── notebooks/
 │   └── demo.ipynb           # Interactive Jupyter demo
 ├── tests/
-│   └── test_core.py         # Pytest unit tests
+│   ├── test_core.py         # Model and projection tests
+│   └── test_datasets.py     # Data-import tests
 ├── .github/workflows/
 │   └── tests.yml            # CI across supported Python versions
 ├── CONTRIBUTING.md
