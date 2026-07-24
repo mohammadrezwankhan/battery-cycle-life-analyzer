@@ -31,9 +31,9 @@ def synthetic_lfp(cycles: int = 1500,
     rng = np.random.default_rng(seed)
     x = np.arange(1, cycles + 1, dtype=float)
 
-    # Two‑phase degradation: power‑law fade + sudden onset (knee)
+    # Two‑phase degradation: mild power‑law fade + soft knee + late acceleration.
     q0 = 1.0
-    alpha = 0.012
+    alpha = 0.0006
     beta = 0.65
     capacity = q0 - alpha * x ** beta
 
@@ -43,7 +43,7 @@ def synthetic_lfp(cycles: int = 1500,
     capacity -= knee_mag
 
     # Non‑linear end‑of‑life acceleration
-    eol_accel = 0.0004 * np.maximum(0, x - 1100) ** 1.1
+    eol_accel = 0.00005 * np.maximum(0, x - 1100) ** 1.1
     capacity -= eol_accel
 
     capacity += rng.normal(0, noise_std, size=cycles)

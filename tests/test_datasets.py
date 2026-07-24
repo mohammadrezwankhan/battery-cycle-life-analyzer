@@ -5,7 +5,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bcla.datasets import load_cycle_data
+from bcla import core
+from bcla.datasets import load_cycle_data, synthetic_lfp
 
 
 def test_load_cycle_data_reads_csv_and_normalizes(tmp_path: Path):
@@ -82,3 +83,28 @@ def test_load_cycle_data_rejects_multi_character_separator(tmp_path: Path):
 
     with pytest.raises(ValueError, match="Separator must be one character"):
         load_cycle_data(csv_path, sep="||")
+
+
+def test_synthetic_lfp_is_gradual_without_premature_clipping():
+    cycles, capacity = synthetic_lfp(cycles=1500, seed=42, noise_std=0.0)
+
+    assert cycles[0] == 1.0
+    assert cycles[-1] == 1500.0
+    assert capacity.shape == (1500,)
+    assert np.all(np.diff(capacity) <= 1e-12)
+    assert capacity[0] > 0.99
+    assert capacity[-1] > 0.82
+    assert capacity.min() > 0.84
+
+
+def test_synthetic_lfp_best_fit_is_good_and_produces_reasonable_eol():
+    cycles, capacity = synthetic_lfp(cycles=1500, seed=42, noise_std=0.0)
+    results = core.fit_all_models(cycles, capacity)
+    _, best = core.best_model(results, criterion="rmse")
+
+    assert best.r_squared > 0.95
+
+    eol = best.eol_cycle(eol_fraction=0.8)
+    assert eol is not None
+    assert eol > cycles[-1]
+    assert eol < 3000
