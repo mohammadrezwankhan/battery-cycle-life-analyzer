@@ -83,6 +83,7 @@ LONG_FORM_OPTIONAL_COLUMNS = (
     "cycles_per_day",
     "depth_of_discharge",
     "energy_throughput_wh",
+    "duty_cycle_profile",
     "protocol",
     "source",
 )
@@ -557,6 +558,11 @@ def load_cycle_data_long_form(
                     "energy_throughput_wh",
                     raw_row.get("energy_throughput_wh"),
                     non_negative=True,
+                ),
+                "duty_cycle_profile": _parse_optional_str(
+                    row_i,
+                    "duty_cycle_profile",
+                    raw_row.get("duty_cycle_profile"),
                 ),
                 "protocol": _parse_optional_str(
                     row_i,

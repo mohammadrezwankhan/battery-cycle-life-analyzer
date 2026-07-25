@@ -90,6 +90,7 @@ Optional experimental context columns:
 - `cycles_per_day` *(non-negative)*
 - `depth_of_discharge` *(non-negative, fraction 0–1)*
 - `energy_throughput_wh` *(non-negative)*
+- `duty_cycle_profile` *(optional free-form descriptor, e.g. ``continuous``, ``1x daily``, ``partial cycles``)*
 - `protocol`
 - `source`
 
