@@ -183,6 +183,19 @@ def test_load_cycle_data_long_form_rejects_negative_optional(tmp_path: Path):
         load_cycle_data_long_form(csv_path)
 
 
+def test_load_cycle_data_long_form_rejects_depth_of_discharge_over_one(tmp_path: Path):
+    csv_path = tmp_path / "bad_dod.csv"
+    csv_path.write_text(
+        "cell_id,cycle,capacity,depth_of_discharge\nC,1,1.00,1.5\n"
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="depth_of_discharge in row 2 must be between 0 and 1",
+    ):
+        load_cycle_data_long_form(csv_path)
+
+
 def test_load_cycle_data_long_form_rejects_invalid_timestamp(tmp_path: Path):
     bad = "2026/07/01 00:00"
     csv_path = tmp_path / "bad_timestamp.csv"

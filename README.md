@@ -104,8 +104,11 @@ as `None` rather than silently defaulted.
 The loader validates:
 
 - `cycle` and `capacity` must parse as finite numbers
-- `cycle` and numeric optional fields (when provided) must be non-negative where
-  applicable
+- `cycle` and numeric optional fields (when provided) must be within their
+  documented bounds:
+  - `depth_of_discharge`: `0 <= value <= 1`
+  - `c_rate`, `rest_time_h`, `cycles_per_day`, `energy_throughput_wh`:
+    non-negative
 - `cell_id`, `cycle`, `capacity` cannot be missing
 - per-cell summary envelopes (`validation_envelopes`) including:
   - observed `cycle_range` and `cycle_count`

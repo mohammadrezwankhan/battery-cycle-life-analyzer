@@ -217,6 +217,31 @@ def _parse_optional_float(
     return parsed
 
 
+def _parse_optional_fraction(
+    row_num: int,
+    field: str,
+    value: Any,
+    *,
+    allow_endpoint: bool = True,
+) -> float | None:
+    parsed = _parse_optional_float(
+        row_num,
+        field,
+        value,
+        non_negative=True,
+    )
+    if parsed is None:
+        return None
+
+    upper = 1.0 if allow_endpoint else (1.0 - np.finfo(float).eps)
+    if parsed > upper:
+        raise ValueError(
+            f"{field} in row {row_num} must be between 0 and "
+            f"{1.0 if allow_endpoint else 'just under 1'}."
+        )
+    return parsed
+
+
 def _parse_optional_str(row_num: int, field: str, value: Any) -> str | None:
     if value is None:
         return None
@@ -522,11 +547,10 @@ def load_cycle_data_long_form(
                     raw_row.get("cycles_per_day"),
                     non_negative=True,
                 ),
-                "depth_of_discharge": _parse_optional_float(
+                "depth_of_discharge": _parse_optional_fraction(
                     row_i,
                     "depth_of_discharge",
                     raw_row.get("depth_of_discharge"),
-                    non_negative=True,
                 ),
                 "energy_throughput_wh": _parse_optional_float(
                     row_i,
