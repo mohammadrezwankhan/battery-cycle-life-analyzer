@@ -90,15 +90,18 @@ class FitResult:
             return None
         return float(candidates[idx[0]])
 
-    def summary(self) -> str:
-        """Multi‑line summary string."""
+    def summary(self, *, ascii_only: bool = False) -> str:
+        """Return a multi-line summary, optionally safe for legacy terminals."""
+        score_label = "R-squared" if ascii_only else "R²"
+        parameter_names = {"α": "alpha", "β": "beta"} if ascii_only else {}
         lines = [
             f"Model          : {self.model_name}",
             f"RMSE           : {self.rmse:.5f}",
-            f"R²             : {self.r_squared:.4f}",
+            f"{score_label:<15}: {self.r_squared:.4f}",
         ]
         for k, v in self.params.items():
-            lines.append(f"  {k:<15s}: {v:.6f}")
+            display_name = parameter_names.get(k, k)
+            lines.append(f"  {display_name:<15s}: {v:.6f}")
         return "\n".join(lines)
 
 

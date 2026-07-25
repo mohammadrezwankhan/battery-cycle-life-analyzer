@@ -1,13 +1,15 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "bcla"
+name = "battery-cycle-life-analyzer"
 version = "0.1.0"
-description = "Battery Cycle‑Life Analyzer — fit degradation models, project EOL"
+description = "Fit battery capacity-fade models and project bounded end of life"
+readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "numpy>=1.21",
     "scipy>=1.7",
@@ -16,16 +18,38 @@ dependencies = [
 authors = [
     { name = "Mohammad Rezwan Khan", email = "mohammadrezwankhan@users.noreply.github.com" },
 ]
+keywords = [
+    "battery",
+    "battery-degradation",
+    "cycle-life",
+    "remaining-useful-life",
+    "curve-fitting",
+    "energy-storage",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
 ]
 
 [project.urls]
-Home = "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer"
+Homepage = "https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/"
+Source = "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer"
+Issues = "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/issues"
+Documentation = "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer#readme"
+Changelog = "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = ["pytest"]
+
+[project.scripts]
+bcla = "bcla.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["bcla*"]

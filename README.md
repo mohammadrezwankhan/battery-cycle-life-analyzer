@@ -260,13 +260,15 @@ battery-cycle-life-analyzer/
 │   └── demo.ipynb           # Interactive Jupyter demo
 ├── tests/
 │   ├── test_core.py         # Model and projection tests
-│   └── test_datasets.py     # Data-import tests
+│   ├── test_datasets.py     # Data-import tests
+│   ├── test_notebook.py     # Executable-notebook regression tests
+│   └── test_cli.py          # Legacy Windows terminal-output tests
 ├── .github/workflows/
 │   └── tests.yml            # CI across supported Python versions
+├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── pyproject.toml
-├── setup.py
 ├── Makefile
 └── README.md
 ```

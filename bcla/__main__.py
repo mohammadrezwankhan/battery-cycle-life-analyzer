@@ -7,7 +7,7 @@ import argparse
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="python -m bcla",
-        description="Battery Cycle‑Life Analyzer — quick demo",
+        description="Battery Cycle-Life Analyzer - quick demo",
     )
     parser.add_argument("--cycles", type=int, default=1500,
                         help="Number of synthetic cycles")
@@ -46,11 +46,11 @@ def main() -> None:
         results = fit_all_models(x, y)
         name, best = best_model(results)
         for r in results.values():
-            print(r.summary() + "\n")
-        print(f"→ Best model: {name}")
+            print(r.summary(ascii_only=True) + "\n")
+        print(f"Best model: {name}")
     else:
         result = fit_capacity_fade(x, y, model=args.model)
-        print(result.summary())
+        print(result.summary(ascii_only=True))
 
     from .viz import capacity_fade
     import matplotlib.pyplot as plt
