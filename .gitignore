@@ -1,0 +1,16 @@
+# MATLAB
+*.mat
+*.slx.autosave
+*.asv
+*.m~
+*.mex*
+*.mdlp
+*.slxc
+
+# C/C++
+*.o
+*.obj
+
+# OS generated files
+.DS_Store
+Thumbs.db
