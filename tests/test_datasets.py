@@ -114,6 +114,9 @@ def test_load_cycle_data_long_form_multi_cell_with_metadata_and_envelope(tmp_pat
     assert envelope_a["cycle_range"] == (1.0, 2.0)
     assert envelope_a["temperature_c"] == (23.0, 25.0)
     assert envelope_a["c_rate"] == (0.5, 0.5)
+    assert envelope_a["timestamp_range"][0] == "2026-07-01T00:00:00+00:00"
+    assert envelope_a["timestamp_range"][1] == "2026-07-01T00:01:00+00:00"
+    assert abs(envelope_a["timestamp_span_days"] - 0.0006944444444444445) < 1e-12
 
     envelope_b = result.validation_envelopes["NMC-B"]
     assert envelope_b["cycle_range"] == (1.0, 3.0)
@@ -133,6 +136,7 @@ def test_load_cycle_data_long_form_marks_optional_fields_explicitly(tmp_path: Pa
     assert all(row["chemistry"] is None for row in result.rows)
     assert all(row["temperature_c"] is None for row in result.rows)
     assert all(row["protocol"] is None for row in result.rows)
+    assert all(row["timestamp_iso"] is None for row in result.rows)
     assert result.cell_ids == ("C01",)
     assert np.allclose(result.cycles, np.array([1.0, 2.0]))
     assert np.allclose(result.capacity, np.array([1.0, 0.95]))
@@ -176,6 +180,18 @@ def test_load_cycle_data_long_form_rejects_negative_optional(tmp_path: Path):
     csv_path.write_text("cell_id,cycle,capacity,c_rate\nC,1,1.00,-0.5\n")
 
     with pytest.raises(ValueError, match="Negative optional value in row 2"):
+        load_cycle_data_long_form(csv_path)
+
+
+def test_load_cycle_data_long_form_rejects_invalid_timestamp(tmp_path: Path):
+    bad = "2026/07/01 00:00"
+    csv_path = tmp_path / "bad_timestamp.csv"
+    csv_path.write_text(
+        "cell_id,cycle,capacity,timestamp_iso\nC,1,1.00,"
+        f"{bad}\n"
+    )
+
+    with pytest.raises(ValueError, match="Could not parse optional timestamp field in row 2"):
         load_cycle_data_long_form(csv_path)
 
 

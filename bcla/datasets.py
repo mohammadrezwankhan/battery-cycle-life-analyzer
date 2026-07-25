@@ -5,6 +5,7 @@ datasets — Built‑in example cycling data and synthetic generators.
 from __future__ import annotations
 
 import csv
+from datetime import datetime
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -225,6 +226,28 @@ def _parse_optional_str(row_num: int, field: str, value: Any) -> str | None:
     return text
 
 
+def _parse_optional_timestamp(row_num: int, field: str, value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if text == "":
+        return None
+
+    normalized = text
+    if normalized.endswith("Z"):
+        normalized = normalized[:-1] + "+00:00"
+
+    try:
+        dt = datetime.fromisoformat(normalized)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Could not parse optional timestamp field in row {row_num}: "
+            f"{field}={value!r}"
+        ) from exc
+
+    return dt.isoformat()
+
+
 def _build_validation_envelope(
     rows: list[dict[str, Any]]
 ) -> dict[str, dict[str, Any]]:
@@ -235,6 +258,11 @@ def _build_validation_envelope(
     envelopes: dict[str, dict[str, Any]] = {}
     for cell_id, observations in by_cell.items():
         cycles = [float(row["cycle"]) for row in observations]
+        timestamps = [
+            datetime.fromisoformat(row["_timestamp_parsed"].replace("Z", "+00:00"))
+            for row in observations
+            if row["_timestamp_parsed"] is not None
+        ]
         temperature_c = [
             float(row["temperature_c"]) for row in observations
             if row["temperature_c"] is not None
@@ -263,6 +291,13 @@ def _build_validation_envelope(
         envelopes[cell_id] = {
             "cycle_range": (min(cycles), max(cycles)),
             "cycle_count": len(cycles),
+            "timestamp_range": (
+                min(timestamps).isoformat(),
+                max(timestamps).isoformat(),
+            ) if timestamps else (None, None),
+            "timestamp_span_days": (
+                (max(timestamps) - min(timestamps)).total_seconds() / 86400.0
+            ) if timestamps else None,
             "temperature_c": (
                 min(temperature_c), max(temperature_c)
             ) if temperature_c else (None, None),
@@ -454,6 +489,11 @@ def load_cycle_data_long_form(
                     raw_row.get("chemistry"),
                 ),
                 "timestamp_iso": _parse_optional_str(
+                    row_i,
+                    "timestamp_iso",
+                    raw_row.get("timestamp_iso"),
+                ),
+                "_timestamp_parsed": _parse_optional_timestamp(
                     row_i,
                     "timestamp_iso",
                     raw_row.get("timestamp_iso"),

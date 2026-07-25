@@ -104,6 +104,7 @@ The loader validates:
 - `cell_id`, `cycle`, `capacity` cannot be missing
 - per-cell summary envelopes (`validation_envelopes`) including:
   - observed `cycle_range` and `cycle_count`
+  - `timestamp_range` and `timestamp_span_days` when timestamps are present
   - min/max for `temperature_c`, `c_rate`, `rest_time_h`, `cycles_per_day`,
     `depth_of_discharge`, and `energy_throughput_wh`
 
