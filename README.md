@@ -93,6 +93,11 @@ Optional experimental context columns:
 - `protocol`
 - `source`
 
+`cycles_per_day` is an aggregate summary for the exported trace segment and can be
+non-integer (for example, `0.5` for one cycle every two days). If your lab workflow
+explicitly alternates single and double cycles, keep the aggregate rate here and
+capture the regime in `protocol`.
+
 Every optional field is explicit: when a value is missing in a row, it is stored
 as `None` rather than silently defaulted.
 
