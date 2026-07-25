@@ -23,6 +23,8 @@ project battery end of life inside an explicit extrapolation limit.
   three times the observed cycle range.
 - Reproducible synthetic LFP and NMC demonstrations.
 - CSV/TSV cycle-capacity import with normalization and validation.
+- Optional long-form ingestion with metadata columns for reproducibility and
+  provenance.
 - Publication-ready Matplotlib figures and a tested Python API.
 
 ## Quick start
@@ -51,7 +53,8 @@ so unsupported threshold crossings return no estimate.
 This is an empirical research and educational baseline, not an
 electrochemical, pack-safety, or production BMS model. The bundled data are
 synthetic. Engineering conclusions require representative laboratory data and
-explicit consideration of chemistry, temperature, protocol, and uncertainty.
+explicit consideration of chemistry, protocol, temperature, time metadata, and
+uncertainty.
 
 ## Project links
 

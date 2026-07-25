@@ -94,11 +94,11 @@ def test_load_cycle_data_long_form_multi_cell_with_metadata_and_envelope(tmp_pat
     csv_path = tmp_path / "long_form.csv"
     csv_path.write_text(
         "cell_id,cycle,capacity,chemistry,temperature_c,c_rate,cycles_per_day,"
-        "depth_of_discharge,energy_throughput_wh,protocol,source\n"
-        "LFP-A,2,0.997,LFP,25,0.5,1,0.8,1200,CC,lab\n"
-        "LFP-A,1,1.00,LFP,23,0.5,1,0.8,1000,CC,lab\n"
-        "NMC-B,1,1.01,NMC,35,1.0,2,0.9,1500,CC,test\n"
-        "NMC-B,3,0.99,NMC,36,1.1,2,0.9,1510,CC,test\n"
+        "timestamp_iso,depth_of_discharge,energy_throughput_wh,protocol,source\n"
+        "LFP-A,2,0.997,LFP,25,0.5,1,2026-07-01T00:00:00Z,0.8,1200,CC,lab\n"
+        "LFP-A,1,1.00,LFP,23,0.5,1,2026-07-01T00:01:00Z,0.8,1000,CC,lab\n"
+        "NMC-B,1,1.01,NMC,35,1.0,2,2026-07-01T00:02:00Z,0.9,1500,CC,test\n"
+        "NMC-B,3,0.99,NMC,36,1.1,2,2026-07-01T00:03:00Z,0.9,1510,CC,test\n"
     )
 
     result = load_cycle_data_long_form(csv_path)
@@ -119,6 +119,8 @@ def test_load_cycle_data_long_form_multi_cell_with_metadata_and_envelope(tmp_pat
     assert envelope_b["cycle_range"] == (1.0, 3.0)
     assert envelope_b["cycles_per_day"] == (2.0, 2.0)
     assert envelope_b["depth_of_discharge"] == (0.9, 0.9)
+    assert all(row["timestamp_iso"] is not None for row in result.rows)
+    assert result.rows[0]["timestamp_iso"] == "2026-07-01T00:00:00Z"
 
 
 def test_load_cycle_data_long_form_marks_optional_fields_explicitly(tmp_path: Path):

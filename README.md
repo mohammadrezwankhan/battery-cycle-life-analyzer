@@ -83,6 +83,7 @@ Required columns:
 Optional experimental context columns:
 
 - `chemistry`
+- `timestamp_iso` *(RFC 3339 / ISO 8601 string, optional)*
 - `temperature_c`
 - `c_rate` *(non-negative)*
 - `rest_time_h` *(non-negative)*

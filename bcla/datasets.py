@@ -75,6 +75,7 @@ def synthetic_nmc(cycles: int = 1000,
 LONG_FORM_REQUIRED_COLUMNS = ("cell_id", "cycle", "capacity")
 LONG_FORM_OPTIONAL_COLUMNS = (
     "chemistry",
+    "timestamp_iso",
     "temperature_c",
     "c_rate",
     "rest_time_h",
@@ -451,6 +452,11 @@ def load_cycle_data_long_form(
                     row_i,
                     "chemistry",
                     raw_row.get("chemistry"),
+                ),
+                "timestamp_iso": _parse_optional_str(
+                    row_i,
+                    "timestamp_iso",
+                    raw_row.get("timestamp_iso"),
                 ),
                 "temperature_c": _parse_optional_float(
                     row_i,
