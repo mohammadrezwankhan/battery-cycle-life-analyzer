@@ -24,7 +24,8 @@ project battery end of life inside an explicit extrapolation limit.
 - Reproducible synthetic LFP and NMC demonstrations.
 - CSV/TSV cycle-capacity import with normalization and validation.
 - Optional long-form ingestion with metadata columns for reproducibility and
-  provenance.
+  provenance, plus optional duty-cycle history v2 for interval-level operating
+  context.
 - Publication-ready Matplotlib figures and a tested Python API.
 
 ## Quick start

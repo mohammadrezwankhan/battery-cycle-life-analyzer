@@ -16,6 +16,7 @@ __version__ = "0.1.0"
 
 from .datasets import (
     LongFormCycleData,
+    load_duty_cycle_history,
     load_cycle_data,
     load_cycle_data_long_form,
 )  # re-exported convenience helpers

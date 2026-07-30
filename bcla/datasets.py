@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import csv
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -88,6 +88,24 @@ LONG_FORM_OPTIONAL_COLUMNS = (
     "source",
 )
 
+DUTY_CYCLE_HISTORY_REQUIRED_COLUMNS = (
+    "cell_id",
+    "experiment_id",
+    "interval_start",
+    "interval_end",
+)
+DUTY_CYCLE_HISTORY_OPTIONAL_COLUMNS = (
+    "direction",
+    "duty_cycle_profile",
+    "protocol",
+    "operating_state",
+    "temperature_c",
+    "c_rate",
+    "depth_of_discharge",
+    "energy_throughput_wh",
+    "source",
+)
+
 
 @dataclass(frozen=True)
 class LongFormCycleData:
@@ -96,6 +114,9 @@ class LongFormCycleData:
     rows: list[dict[str, Any]]
     schema_version: str
     validation_envelopes: dict[str, dict[str, Any]]
+    duty_cycle_history: list[dict[str, Any]] = field(default_factory=list)
+    duty_cycle_history_schema: str | None = None
+    duty_cycle_history_validation: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @property
     def cell_ids(self) -> tuple[str, ...]:
@@ -272,6 +293,223 @@ def _parse_optional_timestamp(row_num: int, field: str, value: Any) -> str | Non
         ) from exc
 
     return dt.isoformat()
+
+
+def _parse_required_timestamp(
+    row_num: int,
+    field: str,
+    value: Any,
+) -> str:
+    parsed = _parse_optional_timestamp(row_num, field, value)
+    if parsed is None:
+        raise ValueError(
+            f"Missing required timestamp in row {row_num}: {field}={value!r}"
+        )
+    return parsed
+
+
+def _build_history_envelope(
+    rows: list[dict[str, Any]]
+) -> dict[str, dict[str, Any]]:
+    by_key: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_key.setdefault(f"{row['cell_id']}|{row['experiment_id']}", []).append(row)
+
+    envelopes: dict[str, dict[str, Any]] = {}
+    for key, intervals in by_key.items():
+        start_times = [
+            datetime.fromisoformat(row["_interval_start_parsed"].replace("Z", "+00:00"))
+            for row in intervals
+        ]
+        end_times = [
+            datetime.fromisoformat(row["_interval_end_parsed"].replace("Z", "+00:00"))
+            for row in intervals
+        ]
+        durations = [
+            (row["interval_end_dt"] - row["interval_start_dt"]).total_seconds()
+            / 3600.0
+            for row in intervals
+        ]
+        temperature = [float(row["temperature_c"]) for row in intervals
+                       if row["temperature_c"] is not None]
+        c_rates = [float(row["c_rate"]) for row in intervals
+                   if row["c_rate"] is not None]
+        dod = [float(row["depth_of_discharge"]) for row in intervals
+               if row["depth_of_discharge"] is not None]
+        throughput = [float(row["energy_throughput_wh"]) for row in intervals
+                      if row["energy_throughput_wh"] is not None]
+        history_count = len(intervals)
+        envelopes[key] = {
+            "interval_count": history_count,
+            "interval_start_range": (
+                min(start_times).isoformat(),
+                max(start_times).isoformat(),
+            ),
+            "interval_end_range": (
+                min(end_times).isoformat(),
+                max(end_times).isoformat(),
+            ),
+            "span_hours": (
+                (max(end_times) - min(start_times)).total_seconds() / 3600.0
+            ),
+            "duration_hours": (
+                min(durations),
+                max(durations),
+            ) if durations else (None, None),
+            "temperature_c": (
+                min(temperature), max(temperature)
+            ) if temperature else (None, None),
+            "c_rate": (min(c_rates), max(c_rates)) if c_rates else (None, None),
+            "depth_of_discharge": (min(dod), max(dod)) if dod else (None, None),
+            "energy_throughput_wh": (
+                min(throughput), max(throughput)
+            ) if throughput else (None, None),
+        }
+    return envelopes
+
+
+def load_duty_cycle_history(
+    csv_path: str | Path,
+    sep: str | None = None,
+    schema_version: str = "2",
+    *,
+    expected_cell_ids: set[str] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], str]:
+    """
+    Load an optional duty-cycle history table linked to long-form observations.
+
+    Parameters
+    ----------
+    csv_path : str | Path
+        Input history CSV/TSV path.
+    sep : str | None
+        Separator character. If None, infer tab for `.tsv`/`.tab` files and comma
+        otherwise.
+    schema_version : str
+        Optional schema tag returned in the result.
+    expected_cell_ids : set[str] | None
+        Optional set of allowed cell IDs for referential integrity checks.
+    """
+    path = Path(csv_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Could not find duty-cycle history file: {path}")
+
+    if sep is None:
+        delimiter = "\t" if path.suffix.lower() in {".tsv", ".tab"} else ","
+    else:
+        delimiter = "\t" if sep == r"\t" else sep
+        if len(delimiter) != 1:
+            raise ValueError(
+                "Separator must be one character or the escaped tab value '\\t'."
+            )
+
+    with path.open("r", newline="", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f, delimiter=delimiter)
+        if reader.fieldnames is None:
+            raise ValueError("Input file is missing a header row.")
+
+        header = set(reader.fieldnames)
+        missing = set(DUTY_CYCLE_HISTORY_REQUIRED_COLUMNS) - header
+        if missing:
+            raise ValueError(
+                f"Missing required columns: {', '.join(sorted(missing))}. "
+                f"Available columns: {', '.join(reader.fieldnames)}"
+            )
+
+        rows: list[dict[str, Any]] = []
+        for row_i, raw_row in enumerate(reader, start=2):
+            row = {
+                "cell_id": _parse_required_string(
+                    row_i, "cell_id", raw_row["cell_id"]
+                ),
+                "experiment_id": _parse_required_string(
+                    row_i, "experiment_id", raw_row["experiment_id"]
+                ),
+                "interval_start": _parse_required_timestamp(
+                    row_i, "interval_start", raw_row.get("interval_start")
+                ),
+                "_interval_start_parsed": _parse_required_timestamp(
+                    row_i, "interval_start", raw_row.get("interval_start")
+                ),
+                "interval_end": _parse_required_timestamp(
+                    row_i, "interval_end", raw_row.get("interval_end")
+                ),
+                "_interval_end_parsed": _parse_required_timestamp(
+                    row_i, "interval_end", raw_row.get("interval_end")
+                ),
+                "direction": _parse_optional_str(
+                    row_i, "direction", raw_row.get("direction")
+                ),
+                "duty_cycle_profile": _parse_optional_str(
+                    row_i, "duty_cycle_profile",
+                    raw_row.get("duty_cycle_profile"),
+                ),
+                "protocol": _parse_optional_str(
+                    row_i, "protocol", raw_row.get("protocol")
+                ),
+                "operating_state": _parse_optional_str(
+                    row_i, "operating_state", raw_row.get("operating_state")
+                ),
+                "source": _parse_optional_str(
+                    row_i, "source", raw_row.get("source")
+                ),
+                "temperature_c": _parse_optional_float(
+                    row_i,
+                    "temperature_c",
+                    raw_row.get("temperature_c"),
+                    non_negative=False,
+                ),
+                "c_rate": _parse_optional_float(
+                    row_i,
+                    "c_rate",
+                    raw_row.get("c_rate"),
+                    non_negative=True,
+                ),
+                "depth_of_discharge": _parse_optional_fraction(
+                    row_i,
+                    "depth_of_discharge",
+                    raw_row.get("depth_of_discharge"),
+                ),
+                "energy_throughput_wh": _parse_optional_float(
+                    row_i,
+                    "energy_throughput_wh",
+                    raw_row.get("energy_throughput_wh"),
+                    non_negative=True,
+                ),
+            }
+
+            row["interval_start_dt"] = datetime.fromisoformat(
+                row["_interval_start_parsed"].replace("Z", "+00:00")
+            )
+            row["interval_end_dt"] = datetime.fromisoformat(
+                row["_interval_end_parsed"].replace("Z", "+00:00")
+            )
+            if row["interval_end_dt"] <= row["interval_start_dt"]:
+                raise ValueError(
+                    "Invalid interval in row "
+                    f"{row_i}: interval_end must be after interval_start."
+                )
+
+            row["interval_seconds"] = (
+                row["interval_end_dt"] - row["interval_start_dt"]
+            ).total_seconds()
+            rows.append(row)
+
+    if not rows:
+        raise ValueError("Input duty-cycle history contains no data rows.")
+
+    _ensure_optional_columns(rows, list(DUTY_CYCLE_HISTORY_OPTIONAL_COLUMNS))
+
+    if expected_cell_ids is not None:
+        unknown = {row["cell_id"] for row in rows} - expected_cell_ids
+        if unknown:
+            raise ValueError(
+                "Duty-cycle history references unknown cell_id values: "
+                f"{', '.join(sorted(unknown))}."
+            )
+
+    envelopes = _build_history_envelope(rows)
+    return rows, envelopes, schema_version
 
 
 def _build_validation_envelope(
@@ -452,6 +690,8 @@ def load_cycle_data_long_form(
     sep: str | None = None,
     normalize: bool = True,
     schema_version: str = "1",
+    history_csv_path: str | Path | None = None,
+    history_schema_version: str = "2",
 ) -> LongFormCycleData:
     """
     Load long-form cycle-capacity data with optional metadata columns preserved.
@@ -467,6 +707,10 @@ def load_cycle_data_long_form(
         If True, divide capacities by the first observed capacity per `cell_id`.
     schema_version : str
         Optional schema tag returned in the result.
+    history_csv_path : str | Path | None
+        Optional path to a duty-cycle history CSV/TSV file.
+    history_schema_version : str
+        Optional schema tag returned when history is supplied.
     """
     path = Path(csv_path)
     if not path.exists():
@@ -600,9 +844,25 @@ def load_cycle_data_long_form(
             for row in group:
                 row["capacity"] = float(row["capacity"]) / base_capacity
 
+    duty_cycle_history: list[dict[str, Any]] = []
+    duty_cycle_history_validation: dict[str, dict[str, Any]] = {}
+    duty_cycle_history_schema: str | None = None
+    if history_csv_path is not None:
+        duty_cycle_history, duty_cycle_history_validation, duty_cycle_history_schema = (
+            load_duty_cycle_history(
+                history_csv_path,
+                sep=sep,
+                schema_version=history_schema_version,
+                expected_cell_ids={row["cell_id"] for row in rows},
+            )
+        )
+
     envelopes = _build_validation_envelope(rows)
     return LongFormCycleData(
         rows=rows,
         schema_version=schema_version,
         validation_envelopes=envelopes,
+        duty_cycle_history=duty_cycle_history,
+        duty_cycle_history_schema=duty_cycle_history_schema,
+        duty_cycle_history_validation=duty_cycle_history_validation,
     )

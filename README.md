@@ -60,7 +60,7 @@ mapping and separators are customizable; `\t` is accepted as an escaped tab:
 python -m bcla --csv data/raw.txt --cycle-col n --capacity-col q --sep '\t' --no-normalize
 ```
 
-## Long-form data schema (v1)
+## Long-form data schema (v1 + optional duty-cycle history v2)
 
 For provenance-aware workflows, use
 `load_cycle_data_long_form()` to keep protocol metadata alongside `(cycle, capacity)`:
@@ -94,6 +94,32 @@ Optional experimental context columns:
 - `protocol`
 - `source`
 
+### Optional duty-cycle history (v2)
+
+If you need per-interval context beyond `cycles_per_day`, provide an optional
+history file:
+
+```python
+from bcla.datasets import load_cycle_data_long_form
+
+dataset = load_cycle_data_long_form(
+    "data/cycle_metadata_example.csv",
+    history_csv_path="data/cycle_duty_history_example.csv",
+)
+```
+
+History columns:
+
+- Required: `cell_id`, `experiment_id`, `interval_start`, `interval_end`
+- Optional: `direction`, `duty_cycle_profile`, `protocol`, `operating_state`,
+  `temperature_c`, `c_rate`, `depth_of_discharge`, `energy_throughput_wh`, `source`
+
+`interval_end` must be after `interval_start`, and timestamps must parse as ISO 8601.
+The parsed table is available on the returned object as
+`dataset.duty_cycle_history`, with interval summaries in
+`dataset.duty_cycle_history_validation`.
+
+
 `cycles_per_day` is an aggregate summary for the exported trace segment and can be
 non-integer (for example, `0.5` for one cycle every two days). If your lab workflow
 explicitly alternates single and double cycles, keep the aggregate rate here and
@@ -122,6 +148,9 @@ Returned fields:
 - `rows`: full observation list with all preserved metadata
 - `schema_version`: schema tag (default `"1"`)
 - `validation_envelopes`: structured per-cell metadata envelope
+- `duty_cycle_history_schema`: history schema tag when provided
+- `duty_cycle_history`: parsed interval rows, or empty list
+- `duty_cycle_history_validation`: per `(cell_id, experiment_id)` interval summary
 - `cycles` / `capacity`: convenience aliases for single-cell files
 - `for_cell(cell_id)`: per-cell arrays for fitting existing API
 

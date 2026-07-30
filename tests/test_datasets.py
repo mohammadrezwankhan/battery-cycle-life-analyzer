@@ -8,6 +8,7 @@ import pytest
 from bcla import core
 from bcla.datasets import (
     LongFormCycleData,
+    load_duty_cycle_history,
     load_cycle_data,
     load_cycle_data_long_form,
     synthetic_lfp,
@@ -143,6 +144,66 @@ def test_load_cycle_data_long_form_marks_optional_fields_explicitly(tmp_path: Pa
     assert np.allclose(result.cycles, np.array([1.0, 2.0]))
     assert np.allclose(result.capacity, np.array([1.0, 0.95]))
     assert all(row["duty_cycle_profile"] is None for row in result.rows)
+
+
+def test_load_cycle_data_long_form_with_history_csv(tmp_path: Path):
+    long_form = tmp_path / "long_form.csv"
+    long_form.write_text(
+        "cell_id,cycle,capacity,chemistry\n"
+        "A,1,1.00,LFP\n"
+        "A,2,0.99,LFP\n"
+        "B,1,1.00,NMC\n"
+        "B,2,0.98,NMC\n"
+    )
+
+    history = tmp_path / "history.csv"
+    history.write_text(
+        "cell_id,experiment_id,interval_start,interval_end,direction,"
+        "temperature_c,c_rate,depth_of_discharge,energy_throughput_wh,"
+        "duty_cycle_profile,protocol\n"
+        "A,test-1,2026-07-01T00:00:00Z,2026-07-01T12:00:00Z,charge,20,0.5,0.8,120,continuous,cccv\n"
+        "A,test-1,2026-07-01T12:00:00Z,2026-07-02T00:00:00Z,discharge,20,0.5,0.8,130,continuous,cccv\n"
+        "B,test-2,2026-07-01T00:00:00Z,2026-07-01T06:00:00Z,charge,30,0.75,0.9,150,partial_cycles,cccv\n"
+    )
+
+    result = load_cycle_data_long_form(
+        long_form,
+        history_csv_path=history,
+    )
+
+    assert result.duty_cycle_history_schema == "2"
+    assert len(result.duty_cycle_history) == 3
+    assert result.duty_cycle_history_validation["A|test-1"]["interval_count"] == 2
+    assert result.duty_cycle_history_validation["B|test-2"]["interval_count"] == 1
+    assert result.duty_cycle_history[0]["interval_seconds"] == 43200.0
+
+
+def test_load_cycle_data_long_form_rejects_history_unknown_cell(tmp_path: Path):
+    long_form = tmp_path / "long_form.csv"
+    long_form.write_text("cell_id,cycle,capacity\nA,1,1.00\n")
+
+    history = tmp_path / "history.csv"
+    history.write_text(
+        "cell_id,experiment_id,interval_start,interval_end\n"
+        "B,test-1,2026-07-01T00:00:00Z,2026-07-01T01:00:00Z\n"
+    )
+
+    with pytest.raises(ValueError, match="unknown cell_id values"):
+        load_cycle_data_long_form(long_form, history_csv_path=history)
+
+
+def test_load_duty_cycle_history_rejects_invalid_interval(tmp_path: Path):
+    history = tmp_path / "history.csv"
+    history.write_text(
+        "cell_id,experiment_id,interval_start,interval_end\n"
+        "A,test-1,2026-07-01T01:00:00Z,2026-07-01T00:00:00Z\n"
+    )
+
+    with pytest.raises(ValueError, match="interval_end must be after interval_start"):
+        load_duty_cycle_history(
+            history,
+            expected_cell_ids={"A"},
+        )
 
 
 @pytest.mark.parametrize(
