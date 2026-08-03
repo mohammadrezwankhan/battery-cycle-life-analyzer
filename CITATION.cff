@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use Battery Cycle-Life Analyzer in research or teaching, please cite this software."
+type: software
+title: "Battery Cycle-Life Analyzer"
+authors:
+  - family-names: Khan
+    given-names: Mohammad Rezwan
+    orcid: "https://orcid.org/0000-0002-1532-0598"
+repository-code: "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer"
+url: "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer"
+license: MIT
+keywords:
+  - battery degradation
+  - cycle life
+  - remaining useful life
+  - capacity fade
