@@ -13,6 +13,14 @@ Designed for battery researchers, energy‑storage engineers, and students who
 need a quick, transparent estimate of cycle‑life without running complex
 physics simulations.
 
+## Documentation Map
+
+- [Installation](#installation) and [Quick start](#quick-start) for the shortest runnable path.
+- [Long-form data schema and provenance](README.md) for provenance-aware inputs.
+- [Assumptions and limitations](#assumptions-and-limitations) before interpreting EOL projections.
+- [Project structure](#project-structure) for notebooks, package code, data, and tests.
+- [Contributing](CONTRIBUTING.md) and [citation metadata](CITATION.cff) for shared or published work.
+
 ---
 
 ## Installation
