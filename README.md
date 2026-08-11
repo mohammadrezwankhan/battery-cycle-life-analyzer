@@ -13,8 +13,18 @@ Designed for battery researchers, energy‑storage engineers, and students who
 need a quick, transparent estimate of cycle‑life without running complex
 physics simulations.
 
+## Analysis workflow
+
+`data → chronological holdout → model selection → full-data refit → bounded EOL/RUL → bootstrap interval`
+
+The default multi-model workflow fits on earlier observations and selects the
+model that predicts the latest held-out observations best. It then refits that
+model on all observations. Residual-bootstrap intervals expose fit variability
+while retaining an explicit bound at three times the largest observed cycle.
+
 ## Documentation Map
 
+- [Analysis workflow](#analysis-workflow) for the model-selection and uncertainty path.
 - [Installation](#installation) and [Quick start](#quick-start) for the shortest runnable path.
 - [Long-form data schema and provenance](README.md) for provenance-aware inputs.
 - [Assumptions and limitations](#assumptions-and-limitations) before interpreting EOL projections.
@@ -45,6 +55,7 @@ python -m pytest
 
 ```bash
 python -m bcla --model all
+python -m bcla --model all --bootstrap-samples 500
 ```
 
 Or open [`notebooks/demo.ipynb`](notebooks/demo.ipynb) for an interactive walk‑through.
@@ -179,8 +190,9 @@ results = core.fit_all_models(cycles, capacity)
 | Feature | Description |
 |---------|-------------|
 | **Degradation models** | Linear, power‑law (LFP‑style), logarithmic — all with scipy curve_fit |
-| **Automatic best‑fit** | `bcla.core.best_model()` picks the lowest‑RMSE model |
+| **Validation-based selection** | `select_model_by_validation()` scores forward prediction on the latest observations before a full-data refit |
 | **EOL projection** | `FitResult.eol_cycle()` estimates when capacity hits any threshold |
+| **EOL/RUL intervals** | `bootstrap_life_projection()` reports residual-bootstrap bounds, censored replicates, and fit failures |
 | **Temperature acceleration** | Arrhenius‑based `arrhenius_acceleration_factor()` to compare operating temperatures |
 | **Publication plots** | Matplotlib figures with ready‑to‑save PNG output at 150+ DPI |
 | **Built‑in datasets** | Synthetic LFP and NMC cycling data for instant demo |
@@ -200,29 +212,56 @@ cycles, capacity = datasets.synthetic_nmc(cycles=1000)
 # Or load cycle-capacity data from a file
 # cycles, capacity = datasets.load_cycle_data("data/cycles.csv")
 
-# 2. Fit all models
-results = core.fit_all_models(cycles, capacity)
-name, best = core.best_model(results)                # picks lowest RMSE
+# 2. Select on the latest 20% of observations, then refit on all data
+selection = core.select_model_by_validation(
+    cycles,
+    capacity,
+    validation_fraction=0.2,
+)
+name, best = selection.model_name, selection.fit
+print(f"Held-out RMSE: {selection.validation_score.rmse:.5f}")
 
 # 3. Project end‑of‑life
 eol = best.eol_cycle(eol_fraction=0.8)
-print(f"Best model: {name}")
+print(f"Selected model: {name}")
 print(f"Projected EOL: {eol:.0f} cycles" if eol is not None
       else "EOL is outside the supported projection window")
 
-# 4. Plot
+# 4. Quantify residual/refit variation in bounded EOL and RUL
+interval = core.bootstrap_life_projection(
+    best,
+    eol_fraction=0.8,
+    samples=500,
+    random_state=42,
+)
+if interval.eol_lower is not None:
+    print(f"95% EOL interval: {interval.eol_lower:.0f}–{interval.eol_upper:.0f}")
+    print(f"95% RUL interval: {interval.rul_lower:.0f}–{interval.rul_upper:.0f}")
+else:
+    print(
+        "Interval unavailable: "
+        f"successful={interval.successful_samples}, "
+        f"censored={interval.censored_samples}, "
+        f"failed={interval.failed_samples}"
+    )
+
+# 5. Plot all full-data fits for diagnosis
+results = core.fit_all_models(cycles, capacity)
 fig = viz.model_comparison(results)
 fig.savefig("capacity_fade.png", dpi=150, bbox_inches="tight")
 ```
 
-Remaining useful life at the latest observed cycle is the projected EOL cycle
-minus that cycle:
+The interval object uses the latest observed cycle by default. For a different
+reporting point, pass `current_cycle=...`; RUL is then the non-negative
+difference between each bootstrap EOL sample and that cycle:
 
 ```python
-current_cycle = cycles[-1]
-rul_cycles = None if eol is None else max(0.0, eol - current_cycle)
-print(f"Projected RUL: {rul_cycles:.0f} cycles" if rul_cycles is not None
-      else "EOL is outside the supported projection window")
+interval = core.bootstrap_life_projection(
+    best,
+    current_cycle=750,
+    samples=500,
+    random_state=42,
+)
 ```
 
 ![Model comparison preview](docs/model_comparison_preview.png)
@@ -252,10 +291,26 @@ RMSE = sqrt(mean((Q_i - Qhat_i)^2))
 R^2  = 1 - sum((Q_i - Qhat_i)^2) / sum((Q_i - mean(Q))^2)
 ```
 
-`best_model()` selects the lowest-RMSE fit by default. `eol_cycle(0.8)` then
-finds the first projected cycle where `Q(n) <= 0.8 Q0`. To avoid presenting
-unbounded extrapolation as evidence, the search stops at three times the
-largest observed cycle and returns `None` if the threshold is not reached.
+`select_model_by_validation()` sorts observations into chronological cycle
+order, fits each model on the earlier observations, and compares predictions on
+the latest held-out window. `validation_fraction` is a fraction of observation
+rows, not a fraction of the cycle-number horizon; repeated cycle indices stay
+on the same side of the split. After selection, it refits only the chosen model
+on all observations.
+`best_model()` remains available when an explicitly in-sample diagnostic is
+needed, but lowest training RMSE is not presented as forecast validation.
+
+`eol_cycle(0.8)` finds the first projected cycle where
+`Q(n) <= 0.8 Q0`. To avoid presenting unbounded extrapolation as evidence, the
+search stops at three times the largest observed cycle and returns `None` if
+the threshold is not reached.
+
+`bootstrap_life_projection()` resamples centered residuals, refits the chosen
+model, and repeats the same bounded threshold search. It reports successful,
+censored, and failed replicates. Percentile bounds are reported only when every
+requested replicate fits and reaches EOL inside the supported horizon; any
+right-censoring or fit failure makes the bounds unavailable. More distinct
+observations than fitted parameters and positive residual variance are required.
 
 Temperature comparisons use a relative Arrhenius acceleration factor:
 
@@ -273,8 +328,13 @@ degradation than at the reference temperature.
 - The bundled LFP and NMC datasets are synthetic demonstrations.
 - EOL projections are sensitive to data quality, model choice, and the
   extrapolation distance.
-- The current release does not calculate parameter confidence intervals or
-  propagate measurement uncertainty into RUL.
+- Bootstrap intervals quantify residual/refit variation conditional on one
+  selected model; they do not cover model-form error, protocol changes,
+  unrecorded measurement uncertainty, serially correlated residuals, or
+  heteroscedastic and cycle-dependent residual variance. Residual resampling
+  assumes the fitted residuals are exchangeable.
+- A single chronological holdout is transparent but less stable than repeated
+  validation across independent cells or test campaigns.
 - The Arrhenius utility compares temperature acceleration independently; it is
   not coupled to the fitted capacity-fade trajectory.
 
