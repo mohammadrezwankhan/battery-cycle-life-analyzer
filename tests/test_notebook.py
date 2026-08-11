@@ -47,3 +47,5 @@ def test_notebook_mentions_colab_bootstrap_and_demo_constraints():
     assert "Projected EOL (80%)" in text
     assert "Projected RUL (80%)" in text
     assert "if eol is None" in text
+    assert "censored={interval.censored_samples}" in text
+    assert "failed={interval.failed_samples}" in text

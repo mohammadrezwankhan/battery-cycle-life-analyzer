@@ -18,9 +18,11 @@ project battery end of life inside an explicit extrapolation limit.
 
 - Linear, power-law, and logarithmic capacity-fade fits using SciPy.
 - RMSE and R^2 diagnostics for every fitted model.
+- Chronological late-cycle validation for model selection before a full-data refit.
 - A configurable EOL threshold relative to fitted initial capacity.
+- Residual-bootstrap EOL/RUL intervals with explicit censoring and fit-failure counts.
 - A bounded projection horizon that returns no estimate when EOL is outside
-  three times the observed cycle range.
+  three times the largest observed cycle.
 - Reproducible synthetic LFP and NMC demonstrations.
 - CSV/TSV cycle-capacity import with normalization and validation.
 - Optional long-form ingestion with metadata columns for reproducibility and
@@ -45,9 +47,14 @@ For normalized capacity `Q(n)` at cycle `n`:
 - Power law: `Q(n) = Q0 - alpha n^beta`
 - Logarithmic: `Q(n) = Q0 - a ln(1 + b n)`
 
-The package reports fit diagnostics before selecting the lowest-RMSE model.
-An in-window fit is not treated as proof of a trustworthy long-range forecast,
-so unsupported threshold crossings return no estimate.
+The default multi-model workflow selects the model with the lowest RMSE on the
+latest chronological holdout, then refits that family on all observations.
+The validation fraction counts observation rows; repeated cycle indices are
+kept together and therefore cannot straddle the chronological split.
+Lowest training RMSE remains available only as an explicit in-sample
+diagnostic. Unsupported threshold crossings return no estimate, and bootstrap
+intervals are withheld whenever a replicate falls outside the bounded
+projection horizon or fails to fit.
 
 ## Scope and limitations
 
@@ -55,7 +62,10 @@ This is an empirical research and educational baseline, not an
 electrochemical, pack-safety, or production BMS model. The bundled data are
 synthetic. Engineering conclusions require representative laboratory data and
 explicit consideration of chemistry, protocol, temperature, time metadata, and
-uncertainty.
+uncertainty. The residual bootstrap is conditional on the selected empirical
+model and assumes exchangeable, constant-variance residuals. It does not cover
+model-form error, protocol shifts, serial or cycle-dependent residual structure,
+or unrecorded measurement uncertainty.
 
 ## Project links
 

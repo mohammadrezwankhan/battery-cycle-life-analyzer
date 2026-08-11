@@ -59,3 +59,83 @@ def test_power_law_cli_is_cp1252_safe(tmp_path):
     assert "alpha" in output
     assert "beta" in output
     assert (tmp_path / "bcla_demo.png").is_file()
+
+
+def test_all_models_cli_uses_temporal_validation_by_default(tmp_path):
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "bcla",
+            "--cycles",
+            "50",
+            "--model",
+            "all",
+        ],
+        cwd=tmp_path,
+        env=_strict_cp1252_environment(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+
+    output = completed.stdout.decode("cp1252", errors="strict")
+    assert completed.returncode == 0, output
+    assert "Selected model:" in output
+    assert "held-out RMSE=" in output
+    assert "validation points=10" in output
+    assert (tmp_path / "bcla_demo.png").is_file()
+
+
+def test_all_models_cli_reports_invalid_validation_before_fit_output(tmp_path):
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "bcla",
+            "--cycles",
+            "5",
+            "--model",
+            "all",
+        ],
+        cwd=tmp_path,
+        env=_strict_cp1252_environment(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+
+    output = completed.stdout.decode("cp1252", errors="strict")
+    assert completed.returncode == 2
+    assert "cannot select a model" in output
+    assert "at least six observations" in output
+    assert "Model          :" not in output
+
+
+def test_cli_reports_all_bootstrap_outcome_counts(tmp_path):
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "bcla",
+            "--cycles",
+            "50",
+            "--model",
+            "linear",
+            "--bootstrap-samples",
+            "20",
+        ],
+        cwd=tmp_path,
+        env=_strict_cp1252_environment(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+
+    output = completed.stdout.decode("cp1252", errors="strict")
+    assert completed.returncode == 0, output
+    assert "Bootstrap replicates:" in output
+    assert "successful=" in output
+    assert "censored=" in output
+    assert "failed=" in output
+    assert "requested=20" in output

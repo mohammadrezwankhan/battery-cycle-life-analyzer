@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Chronological late-cycle holdout scoring and validation-based model selection.
+- Residual-bootstrap EOL/RUL intervals with bounded-projection censoring and
+  fit-failure reporting.
+
+### Changed
+
+- The multi-model CLI now uses validation-based selection by default; explicit
+  in-sample RMSE selection remains available for compatibility and diagnostics.
+- Temporal validation now keeps duplicate cycle indices together, rejects
+  underidentified splits, and requires non-negative cycle indices.
+- Bootstrap bounds are withheld after any censoring or fit failure and require
+  residual degrees of freedom plus positive residual variance.
+
 ## [0.1.0] - 2026-07-25
 
 ### Added
