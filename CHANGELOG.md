@@ -4,11 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.2.0] - 2026-08-26
+
 ### Added
 
 - Chronological late-cycle holdout scoring and validation-based model selection.
 - Residual-bootstrap EOL/RUL intervals with bounded-projection censoring and
   fit-failure reporting.
+- Optional version-2 timestamped duty-cycle history with interval validation,
+  operating-context preservation, and a synthetic example.
 
 ### Changed
 
