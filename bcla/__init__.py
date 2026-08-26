@@ -12,7 +12,7 @@ viz         – Plotting and figure exports
 datasets    – Load example / built‑in cycling data and CSV helpers
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .datasets import (
     LongFormCycleData,
