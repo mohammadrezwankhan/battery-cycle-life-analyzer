@@ -107,6 +107,119 @@ DUTY_CYCLE_HISTORY_OPTIONAL_COLUMNS = (
 )
 
 
+def equivalent_full_cycles(
+    time_s: Any,
+    current_a: Any,
+    nominal_capacity_ah: float,
+    *,
+    query_time_s: Any | None = None,
+) -> NDArray[np.float64]:
+    """
+    Estimate cumulative discharge equivalent full cycles from current data.
+
+    Positive current is treated as discharge and negative current as charge.
+    Charging samples are clipped to zero before trapezoidal integration. One
+    discharge EFC is ``nominal_capacity_ah`` of cumulative positive-current
+    throughput.
+
+    Parameters
+    ----------
+    time_s : array-like
+        Strictly increasing measurement time in seconds.
+    current_a : array-like
+        Measured current in amperes, aligned with ``time_s``.
+    nominal_capacity_ah : float
+        Positive nominal cell capacity in ampere-hours.
+    query_time_s : array-like | None
+        Times at which cumulative EFC is requested. If omitted, return values
+        at every measurement time. Queries must lie inside the measured range.
+
+    Returns
+    -------
+    numpy.ndarray
+        One-dimensional cumulative discharge-EFC values at the query times.
+
+    Notes
+    -----
+    Between samples, the clipped discharge current is linearly interpolated.
+    This makes partial-interval queries consistent with trapezoidal integration.
+    """
+    time = np.asarray(time_s, dtype=float)
+    current = np.asarray(current_a, dtype=float)
+    if time.ndim != 1 or current.ndim != 1:
+        raise ValueError("time_s and current_a must be one-dimensional")
+    if time.size != current.size:
+        raise ValueError("time_s and current_a must have the same length")
+    if time.size < 2:
+        raise ValueError("at least two current measurements are required")
+    if not np.all(np.isfinite(time)) or not np.all(np.isfinite(current)):
+        raise ValueError("time_s and current_a must contain only finite values")
+    if np.any(time < 0.0):
+        raise ValueError("time_s must be non-negative elapsed seconds")
+    with np.errstate(over="ignore", invalid="ignore"):
+        elapsed_s = np.diff(time)
+    if not np.all(np.isfinite(elapsed_s)) or np.any(elapsed_s <= 0.0):
+        raise ValueError("time_s must be strictly increasing")
+
+    try:
+        nominal_capacity = float(nominal_capacity_ah)
+    except (TypeError, ValueError):
+        raise ValueError(
+            "nominal_capacity_ah must be a positive finite value"
+        ) from None
+    if not np.isfinite(nominal_capacity) or nominal_capacity <= 0.0:
+        raise ValueError("nominal_capacity_ah must be a positive finite value")
+
+    if query_time_s is None:
+        query = time.copy()
+    else:
+        query = np.asarray(query_time_s, dtype=float)
+        if query.ndim == 0:
+            query = query.reshape(1)
+        elif query.ndim != 1:
+            raise ValueError("query_time_s must be one-dimensional")
+    if query.size == 0:
+        return np.asarray([], dtype=float)
+    if not np.all(np.isfinite(query)):
+        raise ValueError("query_time_s must contain only finite values")
+    if np.any(query < time[0]) or np.any(query > time[-1]):
+        raise ValueError("query_time_s must lie inside the measured time range")
+
+    discharge_current = np.maximum(current, 0.0)
+    with np.errstate(over="ignore", invalid="ignore"):
+        interval_ah = (
+            0.5
+            * (discharge_current[:-1] + discharge_current[1:])
+            * elapsed_s
+            / 3600.0
+        )
+        cumulative_efc = np.concatenate(
+            ([0.0], np.cumsum(interval_ah) / nominal_capacity)
+        )
+    if not np.all(np.isfinite(cumulative_efc)):
+        raise ValueError("EFC integration produced non-finite values")
+
+    interval_index = np.searchsorted(time, query, side="right") - 1
+    result = cumulative_efc[interval_index].astype(float, copy=True)
+    partial = interval_index < time.size - 1
+    if np.any(partial):
+        idx = interval_index[partial]
+        partial_s = query[partial] - time[idx]
+        fraction = partial_s / (time[idx + 1] - time[idx])
+        query_current = (
+            discharge_current[idx]
+            + fraction * (discharge_current[idx + 1] - discharge_current[idx])
+        )
+        partial_ah = (
+            0.5
+            * (discharge_current[idx] + query_current)
+            * partial_s
+            / 3600.0
+        )
+        result[partial] += partial_ah / nominal_capacity
+    return result
+
+
 @dataclass(frozen=True)
 class LongFormCycleData:
     """Loaded long‑form cycle dataset with provenance fields preserved."""

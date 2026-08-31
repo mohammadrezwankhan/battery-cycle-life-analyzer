@@ -24,6 +24,8 @@ project battery end of life inside an explicit extrapolation limit.
 - A bounded projection horizon that returns no estimate when EOL is outside
   three times the largest observed cycle.
 - Reproducible synthetic LFP and NMC demonstrations.
+- An opt-in [Oxford grid-battery real-data example](oxford-energy-trading.html)
+  that converts measured current throughput to discharge EFC.
 - CSV/TSV cycle-capacity import with normalization and validation.
 - Optional long-form ingestion with metadata columns for reproducibility and
   provenance, plus optional duty-cycle history v2 for interval-level operating
@@ -37,6 +39,12 @@ git clone https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer.git
 cd battery-cycle-life-analyzer
 python -m pip install .
 python -m bcla --model all
+```
+
+For the separately licensed real-data workflow:
+
+```bash
+python examples/oxford_energy_trading.py --cell BMR_cell1
 ```
 
 ## Model families
@@ -70,5 +78,6 @@ or unrecorded measurement uncertainty.
 ## Project links
 
 - [README and equations](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer#readme)
+- [Oxford grid-battery real-data guide](oxford-energy-trading.html)
 - [Contributing guide](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/CONTRIBUTING.md)
 - [MIT license](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/LICENSE)

@@ -16,6 +16,7 @@ __version__ = "0.2.0"
 
 from .datasets import (
     LongFormCycleData,
+    equivalent_full_cycles,
     load_duty_cycle_history,
     load_cycle_data,
     load_cycle_data_long_form,

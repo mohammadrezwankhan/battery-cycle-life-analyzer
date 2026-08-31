@@ -64,11 +64,15 @@ class FitResult:
     observed: np.ndarray
     predicted: np.ndarray
 
-    def project(self, target_cycles: int) -> float:
+    def project(self, target_cycles: float) -> float:
         """Return predicted normalised capacity at *target_cycles*."""
         func = _model_func(self.model_name)
         p0 = [self.params[n] for n in _model_pnames(self.model_name)]
-        return float(func(np.array([target_cycles]), *p0))
+        prediction = np.asarray(
+            func(np.array([target_cycles], dtype=float), *p0),
+            dtype=float,
+        )
+        return float(prediction.reshape(-1)[0])
 
     def eol_cycle(self, eol_fraction: float = 0.8) -> Optional[float]:
         """

@@ -4,7 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Added
+
+- Discharge equivalent-full-cycle integration for measured current time series,
+  including partial-interval queries and strict input validation.
+- An opt-in Oxford grid-battery real-data example with ODbL attribution,
+  measured-profile canonicalization diagnostics, and bounded EOL reporting.
 
 ## [0.2.0] - 2026-08-26
 
