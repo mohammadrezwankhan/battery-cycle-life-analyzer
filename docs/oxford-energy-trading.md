@@ -16,8 +16,9 @@ Each download is capped at 32 MiB before decoding; the largest official profile
 was 8.87 MiB during the 2026-08-31 audit. A larger response is rejected rather
 than read into memory without a bound.
 
-- [Official dataset record](https://ora.ox.ac.uk/objects/uuid:9aae61af-2949-49f1-8ad5-6aea448979e5)
-- Dataset DOI: [`10.5287/bodleian:gJPdDzvP4`](https://doi.org/10.5287/bodleian:gJPdDzvP4)
+- Official dataset record:
+  `https://ora.ox.ac.uk/objects/uuid:9aae61af-2949-49f1-8ad5-6aea448979e5`
+- Dataset DOI: `10.5287/bodleian:gJPdDzvP4`
 - Data license: ODC Open Database License (ODbL) 1.0; individual contents are
   covered by the Database Contents License (DbCL) 1.0.
 
