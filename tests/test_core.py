@@ -23,6 +23,17 @@ def test_fit_linear_returns_reasonable_rmse():
     assert abs(result.params["k"] - 0.0002) < 0.0001
 
 
+def test_fit_result_project_returns_a_scalar_for_float_coordinates():
+    x = np.arange(1, 501, dtype=float)
+    y = 1.0 - 0.0002 * x
+    result = fit_capacity_fade(x, y, model="linear")
+
+    projected = result.project(750.5)
+
+    assert isinstance(projected, float)
+    assert projected == pytest.approx(1.0 - 0.0002 * 750.5, abs=1e-9)
+
+
 def test_fit_power_law_on_noisy_lfp():
     """Power law should fit noisy LFP-like data with reasonable RMSE."""
     x = np.arange(1, 1001, dtype=float)

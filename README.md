@@ -27,6 +27,8 @@ while retaining an explicit bound at three times the largest observed cycle.
 - [Analysis workflow](#analysis-workflow) for the model-selection and uncertainty path.
 - [Installation](#installation) and [Quick start](#quick-start) for the shortest runnable path.
 - [Long-form data schema and provenance](README.md) for provenance-aware inputs.
+- [Oxford grid-battery example](docs/oxford-energy-trading.md) for an opt-in,
+  licensed real-data workflow on measured discharge EFC.
 - [Assumptions and limitations](#assumptions-and-limitations) before interpreting EOL projections.
 - [Project structure](#project-structure) for notebooks, package code, data, and tests.
 - [Contributing](CONTRIBUTING.md) and [citation metadata](CITATION.cff) for shared or published work.
@@ -196,6 +198,7 @@ results = core.fit_all_models(cycles, capacity)
 | **Temperature acceleration** | Arrhenius‑based `arrhenius_acceleration_factor()` to compare operating temperatures |
 | **Publication plots** | Matplotlib figures with ready‑to‑save PNG output at 150+ DPI |
 | **Built‑in datasets** | Synthetic LFP and NMC cycling data for instant demo |
+| **Real-data example** | Opt-in Oxford grid-battery workflow using measured discharge equivalent full cycles |
 | **CSV/TSV import** | Load external cycle-capacity tables with normalization and validation |
 | **CLI + Python API** | Use from the terminal or import as a library |
 
@@ -268,6 +271,24 @@ interval = core.bootstrap_life_projection(
 
 ---
 
+## Real-data example
+
+The opt-in [Oxford grid-battery walkthrough](docs/oxford-energy-trading.md)
+downloads original ODbL-licensed current and capacity CSVs from the University
+of Oxford archive, converts measured positive-current throughput to discharge
+equivalent full cycles, and runs the same validation and bounded-projection
+workflow:
+
+```bash
+python examples/oxford_energy_trading.py --cell BMR_cell1
+```
+
+No Oxford source or derived trajectory is bundled or relicensed by this MIT
+project. The example reports source timestamp repairs, the small unobserved
+near-zero-current tail, and unsupported or censored EOL outcomes explicitly.
+
+---
+
 ## How the models are calculated
 
 The input capacity should be normalized, so an undegraded cell is near
@@ -326,6 +347,8 @@ degradation than at the reference temperature.
 
 - These are empirical curve fits, not electrochemical or safety models.
 - The bundled LFP and NMC datasets are synthetic demonstrations.
+- The Oxford example is opt-in and downloads separately licensed source data;
+  measured EFC remains approximate because current logging is irregular.
 - EOL projections are sensitive to data quality, model choice, and the
   extrapolation distance.
 - Bootstrap intervals quantify residual/refit variation conditional on one
@@ -353,6 +376,8 @@ battery-cycle-life-analyzer/
 │   ├── viz.py               # Matplotlib plotting helpers
 │   ├── datasets.py          # Synthetic data and CSV/TSV import
 │   └── __main__.py          # CLI entry point
+├── examples/
+│   └── oxford_energy_trading.py  # Opt-in measured-EFC real-data example
 ├── notebooks/
 │   └── demo.ipynb           # Interactive Jupyter demo
 ├── tests/
