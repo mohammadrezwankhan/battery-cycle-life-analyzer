@@ -13,6 +13,13 @@ Designed for battery researchers, energy‑storage engineers, and students who
 need a quick, transparent estimate of cycle‑life without running complex
 physics simulations.
 
+![Linear, power-law, and logarithmic fits to a synthetic NMC demonstration](docs/model_comparison_preview.png)
+
+*Synthetic-data illustration, not a measured-cell lifetime forecast.*
+Start with the [runnable CSV example](#quick-start), use the
+[Colab notebook](https://colab.research.google.com/github/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/notebooks/demo.ipynb),
+or inspect the [Oxford measured-current example](docs/oxford-energy-trading.md).
+
 ## Analysis workflow
 
 `data → chronological holdout → model selection → full-data refit → bounded EOL/RUL → bootstrap interval`
@@ -26,7 +33,7 @@ while retaining an explicit bound at three times the largest observed cycle.
 
 - [Analysis workflow](#analysis-workflow) for the model-selection and uncertainty path.
 - [Installation](#installation) and [Quick start](#quick-start) for the shortest runnable path.
-- [Long-form data schema and provenance](README.md) for provenance-aware inputs.
+- [Long-form data schema and provenance](#long-form-data-schema-v1--optional-duty-cycle-history-v2) for provenance-aware inputs.
 - [Oxford grid-battery example](docs/oxford-energy-trading.md) for an opt-in,
   licensed real-data workflow on measured discharge EFC.
 - [Assumptions and limitations](#assumptions-and-limitations) before interpreting EOL projections.
@@ -55,19 +62,41 @@ python -m pytest
 
 ## Quick start
 
+After installation, run the bundled single-cell CSV example from the repository
+root:
+
 ```bash
-python -m bcla --model all
+python -m bcla --csv data/quickstart.csv --model all
+```
+
+The terminal prints each model's diagnostics and a `Selected model:` line with
+held-out RMSE. It saves **`bcla_demo.png` in the current directory** and prints
+`Saved bcla_demo.png`; running it again replaces that output image.
+
+[`data/quickstart.csv`](data/quickstart.csv) contains twelve illustrative cycle
+and capacity-in-Ah observations for one synthetic cell, not laboratory data.
+The loader normalizes capacity by its first observation. Model selection uses
+the latest chronological holdout; the plotted full-data fits are diagnostics,
+not a claim of independently validated lifetime prediction.
+
+For residual-bootstrap diagnostics, add `--bootstrap-samples 500`. To use the
+built-in synthetic LFP series instead of a file, omit `--csv`:
+
+```bash
 python -m bcla --model all --bootstrap-samples 500
 ```
 
-Or open [`notebooks/demo.ipynb`](notebooks/demo.ipynb) for an interactive walk‑through.
-
-You can also point the CLI at a CSV/TSV file:
+The [interactive notebook](notebooks/demo.ipynb) walks through the Python API.
+For your own single-cell CSV/TSV file, replace the example path:
 
 ```bash
-python -m bcla --csv data/cycles.csv --model all
-python -m bcla --csv data/cycles.tsv --model all
+python -m bcla --csv path/to/your_cell.csv --model all
+python -m bcla --csv path/to/your_cell.tsv --model all
 ```
+
+These two paths are placeholders for your files. Keep multi-cell data separate:
+use the [long-form loader](#long-form-data-schema-v1--optional-duty-cycle-history-v2)
+and select one cell before fitting, rather than mixing cells through the CLI.
 
 Expected CSV/TSV columns (case sensitive):
 
@@ -213,7 +242,7 @@ from bcla import core, viz, datasets
 cycles, capacity = datasets.synthetic_nmc(cycles=1000)
 
 # Or load cycle-capacity data from a file
-# cycles, capacity = datasets.load_cycle_data("data/cycles.csv")
+# cycles, capacity = datasets.load_cycle_data("data/quickstart.csv")
 
 # 2. Select on the latest 20% of observations, then refit on all data
 selection = core.select_model_by_validation(
@@ -266,8 +295,6 @@ interval = core.bootstrap_life_projection(
     random_state=42,
 )
 ```
-
-![Model comparison preview](docs/model_comparison_preview.png)
 
 ---
 
@@ -414,6 +441,11 @@ Bug reports, focused feature proposals, documentation improvements, and
 validation datasets with clear provenance are welcome. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing, and pull-request
 guidance.
+
+For methodological questions, use
+[GitHub Discussions](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/discussions).
+The [Oxford EFC convention discussion](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/discussions/8)
+collects feedback on comparing throughput across grid-service profiles.
 
 ---
 
