@@ -14,6 +14,8 @@ project battery end of life inside an explicit extrapolation limit.
 
 ![Linear, power-law, and logarithmic model comparison](model_comparison_preview.png)
 
+*Synthetic NMC demonstration. This figure is not a measured-cell lifetime forecast.*
+
 ## What it provides
 
 - Linear, power-law, and logarithmic capacity-fade fits using SciPy.
@@ -38,8 +40,16 @@ project battery end of life inside an explicit extrapolation limit.
 git clone https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer.git
 cd battery-cycle-life-analyzer
 python -m pip install .
-python -m bcla --model all
+python -m bcla --csv data/quickstart.csv --model all
 ```
+
+The bundled CSV contains twelve illustrative observations for one synthetic
+cell. Capacity is normalized by its first observation. The command prints
+model diagnostics and the selected family's held-out RMSE, then saves
+`bcla_demo.png` in the current directory. Running it again replaces that image.
+Omit `--csv` to use the built-in synthetic LFP series, or replace the path with
+your own single-cell file. For multi-cell data, use the README's long-form
+loader and select a cell before fitting.
 
 For the separately licensed real-data workflow:
 
@@ -80,4 +90,5 @@ or unrecorded measurement uncertainty.
 - [README and equations](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer#readme)
 - [Oxford grid-battery real-data guide](oxford-energy-trading.md)
 - [Contributing guide](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/CONTRIBUTING.md)
+- [Methods and usage discussions](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/discussions)
 - [MIT license](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/LICENSE)

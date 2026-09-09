@@ -139,3 +139,35 @@ def test_cli_reports_all_bootstrap_outcome_counts(tmp_path):
     assert "censored=" in output
     assert "failed=" in output
     assert "requested=20" in output
+
+
+def test_bundled_quickstart_csv_produces_a_result(tmp_path):
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "bcla",
+            "--csv",
+            str(PROJECT_ROOT / "data" / "quickstart.csv"),
+            "--model",
+            "all",
+            "--bootstrap-samples",
+            "20",
+        ],
+        cwd=tmp_path,
+        env=_strict_cp1252_environment(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+
+    output = completed.stdout.decode("cp1252", errors="strict")
+    assert completed.returncode == 0, output
+    assert "Selected model:" in output
+    assert "held-out RMSE=" in output
+    assert "requested=20" in output
+    assert "Saved bcla_demo.png" in output
+    image_path = tmp_path / "bcla_demo.png"
+    assert image_path.is_file()
+    assert image_path.stat().st_size > 1000
+    assert image_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
