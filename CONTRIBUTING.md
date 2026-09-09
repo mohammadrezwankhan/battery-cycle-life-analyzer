@@ -65,6 +65,17 @@ python -m bcla --model all
 
 The GitHub Actions workflow repeats the tests on all supported Python versions.
 
+To regenerate the README and Pages comparison preview from the same 1,000-cycle
+synthetic NMC example (seed 7), run:
+
+```bash
+python -m examples.render_model_preview
+```
+
+Inspect `docs/model_comparison_preview.png` before committing a visual change.
+The Python 3.12 CI job also uploads this render as the
+`model-comparison-preview` artifact for review.
+
 ## Pull requests
 
 In the pull-request description, explain:

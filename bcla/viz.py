@@ -65,6 +65,7 @@ def capacity_fade(result: FitResult,
     ax.plot(result.cycles, result.predicted,
             color="#d62728", linewidth=2, label=result.model_name)
 
+    metrics_x, metrics_alignment = 0.97, "right"
     if show_eol:
         q0 = result.params["Q0"]
         ax.axhline(q0 * eol_fraction, color="grey", ls="--", lw=1,
@@ -72,6 +73,9 @@ def capacity_fade(result: FitResult,
 
         eol_c = result.eol_cycle(eol_fraction)
         if eol_c is not None:
+            # Beyond-range EOL callouts occupy the lower-right space.
+            if eol_c >= np.max(result.cycles):
+                metrics_x, metrics_alignment = 0.03, "left"
             ax.axvline(eol_c, color="grey", ls=":", lw=1, alpha=0.7)
             ax.annotate(f"EOL ≈ {eol_c:.0f}", xy=(eol_c, q0 * eol_fraction),
                         xytext=(eol_c * 0.6, q0 * (eol_fraction - 0.04)),
@@ -80,8 +84,8 @@ def capacity_fade(result: FitResult,
 
     # Metrics text box
     text = f"RMSE = {result.rmse:.5f}\nR²   = {result.r_squared:.4f}"
-    ax.text(0.97, 0.05, text, transform=ax.transAxes,
-            va="bottom", ha="right", fontsize=10,
+    ax.text(metrics_x, 0.05, text, transform=ax.transAxes,
+            va="bottom", ha=metrics_alignment, fontsize=10,
             bbox=dict(boxstyle="round,pad=0.3", facecolor="wheat", alpha=0.7))
 
     ax.set_xlabel("Cycle Number"); ax.set_ylabel("Normalised Capacity")
