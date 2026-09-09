@@ -11,8 +11,9 @@ from bcla import core, datasets, viz  # noqa: E402
 
 
 @pytest.mark.parametrize("model", ["linear", "power_law", "logarithmic", "all"])
-def test_eol_annotation_does_not_overlap_fit_metrics(model):
-    cycles, capacity = datasets.synthetic_nmc(cycles=1000, seed=7)
+@pytest.mark.parametrize("cycle_count", [1000, 1500])
+def test_eol_annotation_does_not_overlap_fit_metrics(model, cycle_count):
+    cycles, capacity = datasets.synthetic_nmc(cycles=cycle_count, seed=7)
     results = core.fit_all_models(cycles, capacity)
     if model == "all":
         figure = viz.model_comparison(results)
@@ -30,6 +31,9 @@ def test_eol_annotation_does_not_overlap_fit_metrics(model):
                 text for text in axis.texts if text.get_text().startswith("RMSE")
             ]
             assert len(annotations) == len(metrics) == 1
+            expected_alignment = "left" if cycle_count == 1000 else "right"
+            assert metrics[0].get_horizontalalignment() == expected_alignment
+            assert (annotations[0].xy[0] >= cycles[-1]) == (cycle_count == 1000)
             # Include the arrow and the padded statistics box, not only text.
             annotation_box = annotations[0].get_window_extent(renderer)
             metrics_box = metrics[0].get_bbox_patch().get_window_extent(renderer)
