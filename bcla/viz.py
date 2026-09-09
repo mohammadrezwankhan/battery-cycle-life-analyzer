@@ -80,8 +80,8 @@ def capacity_fade(result: FitResult,
 
     # Metrics text box
     text = f"RMSE = {result.rmse:.5f}\nR²   = {result.r_squared:.4f}"
-    ax.text(0.97, 0.05, text, transform=ax.transAxes,
-            va="bottom", ha="right", fontsize=10,
+    ax.text(0.03, 0.05, text, transform=ax.transAxes,
+            va="bottom", ha="left", fontsize=10,
             bbox=dict(boxstyle="round,pad=0.3", facecolor="wheat", alpha=0.7))
 
     ax.set_xlabel("Cycle Number"); ax.set_ylabel("Normalised Capacity")
