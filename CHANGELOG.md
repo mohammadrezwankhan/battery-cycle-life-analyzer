@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - Pending release
+
 ### Added
 
 - Discharge equivalent-full-cycle integration for measured current time series,
