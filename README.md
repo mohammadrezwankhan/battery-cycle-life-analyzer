@@ -47,6 +47,14 @@ while retaining an explicit bound at three times the largest observed cycle.
 Requires Python 3.9 or newer. Runtime dependencies are NumPy, SciPy, and
 Matplotlib; `pip` installs them automatically.
 
+Install the published package from [PyPI](https://pypi.org/project/battery-cycle-life-analyzer/):
+
+```bash
+python -m pip install battery-cycle-life-analyzer==0.3.0
+```
+
+For repository examples, notebooks, or development, clone the source instead:
+
 ```bash
 git clone https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer.git
 cd battery-cycle-life-analyzer
@@ -61,6 +69,16 @@ python -m pytest
 ```
 
 ## Quick start
+
+After a PyPI installation, run a synthetic demo without downloading repository files:
+
+```bash
+python -m bcla --model linear
+```
+
+This prints fit diagnostics and saves `bcla_demo.png` in the current directory.
+The input is synthetic LFP data, not a measured-cell lifetime forecast. Repository
+CSV files, notebooks, and the Oxford example require the source checkout below.
 
 After installation, run the bundled single-cell CSV example from the repository
 root:
