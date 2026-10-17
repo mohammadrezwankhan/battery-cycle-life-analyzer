@@ -1,0 +1,62 @@
+name: Published package smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/published-package-smoke.yml
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.12']
+    steps:
+      # No checkout: imports must come from the published wheel.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install exact published version in a fresh environment
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -m venv published-smoke
+          published-smoke/bin/python -m pip install --index-url https://pypi.org/simple battery-cycle-life-analyzer==0.3.0
+          published-smoke/bin/python -m pip check
+          published-smoke/bin/python -m pip freeze
+      - name: Verify installed package and run CSV-to-PNG CLI
+        working-directory: ${{ runner.temp }}
+        env:
+          MPLBACKEND: Agg
+        run: |
+          published-smoke/bin/python - <<'PY'
+          import csv
+          import importlib.metadata
+          import pathlib
+          import subprocess
+          import sys
+          import bcla
+
+          assert importlib.metadata.version('battery-cycle-life-analyzer') == '0.3.0'
+          module = pathlib.Path(bcla.__file__).resolve()
+          assert pathlib.Path(sys.prefix).resolve() in module.parents, module
+          print('Installed module:', module)
+          cli = pathlib.Path(sys.executable).with_name('bcla')
+          subprocess.run([str(cli), '--help'], check=True)
+          with open('synthetic.csv', 'w', newline='') as stream:
+              writer = csv.writer(stream)
+              writer.writerow(['cycle', 'capacity'])
+              writer.writerows((i, 1 - 0.0001 * i) for i in range(0, 1001, 10))
+          subprocess.run([str(cli), '--csv', 'synthetic.csv', '--model', 'linear'], check=True)
+          from matplotlib.image import imread
+          png = pathlib.Path('bcla_demo.png')
+          assert png.stat().st_size > 1000
+          pixels = imread(png)
+          assert pixels.shape[0] > 0 and pixels.shape[1] > 0
+          print('PNG verified:', pixels.shape)
+          PY
