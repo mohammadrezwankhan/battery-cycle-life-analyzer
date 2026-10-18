@@ -66,6 +66,8 @@ class FitResult:
 
     def project(self, target_cycles: float) -> float:
         """Return predicted normalised capacity at *target_cycles*."""
+        if not np.isfinite(target_cycles) or target_cycles < 0.0:
+            raise ValueError("target_cycles must be finite and non-negative")
         func = _model_func(self.model_name)
         p0 = [self.params[n] for n in _model_pnames(self.model_name)]
         prediction = np.asarray(
@@ -81,6 +83,8 @@ class FitResult:
         Returns None if the model never reaches the threshold within
         three times the largest observed cycle.
         """
+        if not 0.0 < eol_fraction < 1.0:
+            raise ValueError("eol_fraction must be between 0 and 1")
         func = _model_func(self.model_name)
         pnames = _model_pnames(self.model_name)
         p0 = [self.params[n] for n in pnames]
@@ -185,8 +189,18 @@ def fit_capacity_fade(cycles: np.ndarray,
     pnames = _model_pnames(model)
     bounds_list = _model_bounds(model)
 
-    x = np.asarray(cycles, dtype=float).ravel()
-    y = np.asarray(capacity, dtype=float).ravel()
+    x = np.asarray(cycles, dtype=float)
+    y = np.asarray(capacity, dtype=float)
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError("cycles and capacity must be one-dimensional")
+    if x.size != y.size:
+        raise ValueError("cycles and capacity must contain the same number of values")
+    if x.size == 0:
+        raise ValueError("cycles and capacity must be non-empty")
+    if not np.all(np.isfinite(x)) or not np.all(np.isfinite(y)):
+        raise ValueError("cycles and capacity must contain only finite values")
+    if np.any(x < 0.0):
+        raise ValueError("cycles must be non-negative")
 
     if q0_guess is None:
         q0_guess = float(y.max())
@@ -552,6 +566,12 @@ def arrhenius_acceleration_factor(temperature_c: float,
     -------
     Acceleration factor ( >1 means faster degradation).
     """
+    if not all(np.isfinite(value) for value in (
+        temperature_c, reference_c, activation_ev
+    )):
+        raise ValueError("temperatures and activation_ev must be finite")
+    if temperature_c <= -273.15 or reference_c <= -273.15:
+        raise ValueError("temperatures must be above absolute zero")
     kB = 8.617333262e-5  # eV / K
     tk = temperature_c + 273.15
     tref = reference_c + 273.15
