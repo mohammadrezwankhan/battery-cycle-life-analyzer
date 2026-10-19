@@ -1,0 +1,92 @@
+{
+  "repository": "battery-cycle-life-analyzer",
+  "domain": "DOMAIN_A",
+  "title": "Battery Cycle Life Analyzer",
+  "version": "2.0.0",
+  "author": "Mohammad Rezwan Khan",
+  "lessons": [
+    {
+      "id": "L01",
+      "title": "Raw Cycling Dataset Cleansing & Capacity/IR Feature Extraction",
+      "level": "Beginner",
+      "duration": "30 mins",
+      "config_file": "config/pipeline_cleansing.yaml",
+      "summary": "Ingest multi-channel cycler logs (Arbin/Maccor/Neware), strip outlier cycles, and isolate differential capacity (dQ/dV) peaks.",
+      "inputs": [
+        "Raw battery cycling CSV files",
+        "End of charge/discharge voltage cutoff definitions"
+      ],
+      "parameters": {
+        "CurrentTolerance_A": 0.005,
+        "OutlierZScoreThreshold": 3.0,
+        "SmoothingSpline_s": 0.002
+      },
+      "checkpoints": [
+        "Verify capacity curve monotonically trending downward",
+        "Extract internal resistance R_int trajectory"
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Empirical Power-Law & SEI Growth Mechanistic Curve Fitting",
+      "level": "Intermediate",
+      "duration": "45 mins",
+      "config_file": "config/degradation_models.yaml",
+      "summary": "Fit square-root diffusion-limited SEI models alongside dual-exponential loss-of-lithium-inventory (LLI) functions using Scipy curve_fit.",
+      "inputs": [
+        "Cycle index series [1..2000]",
+        "Normalized discharge capacity array"
+      ],
+      "parameters": {
+        "SEI_Rate_Constant_alpha": 0.0018,
+        "LLI_Exponent_beta": 0.52,
+        "LossOfActiveMaterial_gamma": 1.2e-05
+      },
+      "checkpoints": [
+        "R-squared goodness of fit > 0.992",
+        "Validate AIC/BIC model selection criteria"
+      ]
+    },
+    {
+      "id": "L03",
+      "title": "Non-Parametric Bootstrap Resampling & 95% RUL Confidence Bounds",
+      "level": "Advanced",
+      "duration": "60 mins",
+      "config_file": "config/bootstrap_uncertainty.yaml",
+      "summary": "Generate 1,000 synthetic degradation paths via residual resampling to project probabilistic distribution of cycle-to-80% EOL.",
+      "inputs": [
+        "Optimal model fitted parameters",
+        "Historical residuals vector"
+      ],
+      "parameters": {
+        "Bootstrap_Iterations": 1000,
+        "Confidence_Level": 0.95,
+        "EOL_Threshold_pct": 80.0
+      },
+      "checkpoints": [
+        "Derive lower/upper cycle bounds [C_lower, C_upper]",
+        "Construct kernel density estimation (KDE) plot of RUL"
+      ]
+    },
+    {
+      "id": "L04",
+      "title": "Automated Degradation Knee-Point Detection & Early Retirement Alert",
+      "level": "Production",
+      "duration": "75 mins",
+      "config_file": "config/knee_point_detector.yaml",
+      "summary": "Formulate curvature maximization algorithms to identify second-derivative inflection points where degradation transitions from linear to exponential.",
+      "inputs": [
+        "Long-term cycling sequence",
+        "Incremental capacity trajectory"
+      ],
+      "parameters": {
+        "CurvatureWindow_Cycles": 50,
+        "AccelerationThreshold": 0.00045
+      },
+      "checkpoints": [
+        "Alert trigger 150 cycles prior to catastrophic rollover",
+        "Export publication-grade vector graphics (.pdf/.svg)"
+      ]
+    }
+  ]
+}
