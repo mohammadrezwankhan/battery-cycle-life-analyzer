@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "repository": {
+    "name": "battery-cycle-life-analyzer",
+    "name_with_owner": "mohammadrezwankhan/battery-cycle-life-analyzer",
+    "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer"
+  },
+  "native_source": {
+    "commit": "13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e",
+    "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/tree/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e",
+    "source_path_override": null
+  },
+  "browser_lab_package_provenance": {
+    "commit": "c286723f9d17e5d7274f49e52a0a711633dc6ceb",
+    "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/tree/c286723f9d17e5d7274f49e52a0a711633dc6ceb",
+    "scope": "This browser lab is a standalone teaching approximation. Use the linked source for the project implementation.",
+    "calibration_status": "synthetic-analytical-fixtures",
+    "config_path": "docs/lesson-config.json"
+  },
+  "native_catalog_source": "Tracked Markdown in source lesson, example, study-case, concept, model, and documentation paths.",
+  "native_material_count": 3,
+  "reproduction_command_count": 4,
+  "materials": [
+    {
+      "id": "doc-0b3e33619677",
+      "title": "Battery Cycle-Life Analyzer",
+      "path": "docs/index.md",
+      "line": 6,
+      "source_paths": [
+        "docs/index.md"
+      ],
+      "source_url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/docs/index.md#L6",
+      "source_revision": "13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e",
+      "source_kind": "audited-native-source",
+      "source_label": "Source at 13e9dfcd7ca6",
+      "catalog_url": null,
+      "native_url": null,
+      "excerpt": "layout: default",
+      "type": "Native reading",
+      "section": "question",
+      "tags": [
+        "native-reading"
+      ],
+      "track": null,
+      "lesson_id": null
+    },
+    {
+      "id": "doc-8ec9a00bfd09",
+      "title": "Battery Cycle‑Life Analyzer (bcla)",
+      "path": "README.md",
+      "line": 1,
+      "source_paths": [
+        "README.md"
+      ],
+      "source_url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/README.md#L1",
+      "source_revision": "c286723f9d17e5d7274f49e52a0a711633dc6ceb",
+      "source_kind": "historical-reconciled-readme",
+      "source_label": "Historical README/source guide at c286723f9d17",
+      "catalog_url": null,
+      "native_url": null,
+      "excerpt": "**Fit degradation models to battery cycling data, project remaining useful",
+      "type": "Native overview",
+      "section": "equations",
+      "tags": [
+        "model"
+      ],
+      "track": null,
+      "lesson_id": null,
+      "source_blob_path": "README.md",
+      "source_blob_sha256": "ee8745c9e8dcc93b20dfa59ccfdbdf001b3edaf5c1bf7592e57e85660edfc159",
+      "source_blob_retrieval": "git-show",
+      "source_blob_cache": null
+    },
+    {
+      "id": "doc-7297ed061a5a",
+      "title": "Oxford grid-battery real-data example",
+      "path": "docs/oxford-energy-trading.md",
+      "line": 6,
+      "source_paths": [
+        "docs/oxford-energy-trading.md"
+      ],
+      "source_url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/docs/oxford-energy-trading.md#L6",
+      "source_revision": "13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e",
+      "source_kind": "audited-native-source",
+      "source_label": "Source at 13e9dfcd7ca6",
+      "catalog_url": null,
+      "native_url": null,
+      "excerpt": "layout: default",
+      "type": "Native reading",
+      "section": "reproduce",
+      "tags": [
+        "model",
+        "native-lesson"
+      ],
+      "track": null,
+      "lesson_id": null
+    }
+  ],
+  "commands": [
+    {
+      "command": "python -m pip install -e \".[dev]\"",
+      "label": "Expected environment setup",
+      "path": ".github/workflows/publish-pypi.yml",
+      "line": 31,
+      "source_url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/.github/workflows/publish-pypi.yml#L31"
+    },
+    {
+      "command": "python -m pytest -v",
+      "label": "Source-defined validation command",
+      "path": ".github/workflows/publish-pypi.yml",
+      "line": 34,
+      "source_url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/.github/workflows/publish-pypi.yml#L34"
+    },
+    {
+      "command": "python -m examples.render_model_preview",
+      "label": "Source-defined example command",
+      "path": ".github/workflows/tests.yml",
+      "line": 40,
+      "source_url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/.github/workflows/tests.yml#L40"
+    },
+    {
+      "command": "make test",
+      "label": "Source-defined validation command",
+      "path": "Makefile",
+      "line": 3,
+      "source_url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/Makefile#L3"
+    }
+  ],
+  "engineering_curriculum_exclusions": [],
+  "visuals": {
+    "mapped_diagrams": [],
+    "section_banners": [
+      "section-01-question.svg",
+      "section-02-equations.svg",
+      "section-03-reproduce.svg",
+      "section-04-verification.svg",
+      "section-05-scope.svg"
+    ]
+  },
+  "native_document_banner_insertions": [
+    {
+      "path": "docs/oxford-energy-trading.md",
+      "section": "reproduce",
+      "section_title": "Reproduce / parameters",
+      "banner": "docs/visuals/sections/section-03-reproduce.svg",
+      "markdown_relative_banner": "visuals/sections/section-03-reproduce.svg",
+      "insert_after_heading": "Oxford grid-battery real-data example",
+      "heading_line": 6,
+      "source_link": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/docs/oxford-energy-trading.md#L6",
+      "reason": "The existing heading 'Oxford grid-battery real-data example' matches the reproduce / parameters section."
+    }
+  ],
+  "native_document_banner_audit": {
+    "schema_version": 1,
+    "eligibility_rule": "Tracked indexed Markdown in an examples, tutorials, lessons, studies, study-cases, concepts or notes directory, or whose path/title explicitly names a lesson, tutorial, example, walkthrough, study case or study. Banners are based only on existing semantic heading text, never directory names.",
+    "eligible_document_count": 1,
+    "lesson_document_candidates": 1,
+    "modified_document_count": 1,
+    "banner_insertion_count": 1,
+    "audit_gap_count": 0,
+    "banners": [
+      {
+        "path": "docs/oxford-energy-trading.md",
+        "section": "reproduce",
+        "section_title": "Reproduce / parameters",
+        "banner": "docs/visuals/sections/section-03-reproduce.svg",
+        "markdown_relative_banner": "visuals/sections/section-03-reproduce.svg",
+        "insert_after_heading": "Oxford grid-battery real-data example",
+        "heading_line": 6,
+        "source_link": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/docs/oxford-energy-trading.md#L6",
+        "reason": "The existing heading 'Oxford grid-battery real-data example' matches the reproduce / parameters section."
+      }
+    ],
+    "audit_gaps": [],
+    "explicit_exclusions": []
+  },
+  "dashboard": {
+    "browser_lab_is_surrogate": true,
+    "native_execution_in_browser": false,
+    "localStorage_or_existing_dashboard_scripts_preserved": true
+  }
+}
