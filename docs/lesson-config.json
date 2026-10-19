@@ -1,92 +1,317 @@
 {
-  "repository": "battery-cycle-life-analyzer",
-  "domain": "DOMAIN_A",
-  "title": "Battery Cycle Life Analyzer",
-  "version": "2.0.0",
-  "author": "Mohammad Rezwan Khan",
-  "lessons": [
+  "$schema": "./lesson-config.schema.json",
+  "schema_version": "1.0",
+  "repository": {
+    "owner": "mohammadrezwankhan",
+    "slug": "battery-cycle-life-analyzer",
+    "name": "battery-cycle-life-analyzer",
+    "title": "Battery Cycle-Life Lab",
+    "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer",
+    "default_branch": "main",
+    "description": "Fit capacity-fade models, test chronological holdouts & report battery-life uncertainty with reproducible Python checks.",
+    "summary": "The Python package fits linear, power-law, and logarithmic capacity-fade models with chronological selection and bounded life projections. The browser exercise builds intuition for normalization and stress sensitivity.",
+    "audience": "Battery researchers, storage engineers, and students interpreting cycle-capacity observations.",
+    "topics": [
+      "battery",
+      "battery-degradation",
+      "cycle-life",
+      "remaining-useful-life",
+      "state-of-health",
+      "energy-storage",
+      "curve-fitting",
+      "model-selection",
+      "uncertainty-quantification",
+      "bootstrap",
+      "python",
+      "scipy",
+      "data-analysis",
+      "scientific-computing",
+      "reproducible-research"
+    ],
+    "source_paths": [
+      "README.md",
+      "pyproject.toml",
+      "bcla/core.py",
+      "bcla/__main__.py",
+      "bcla/datasets.py",
+      "data/quickstart.csv",
+      "docs/index.md",
+      "docs/oxford-energy-trading.md",
+      "notebooks/demo.ipynb",
+      "tests/test_core.py"
+    ],
+    "is_fork": false,
+    "upstream": null
+  },
+  "domain": {
+    "id": "A",
+    "name": "Energy systems",
+    "primary": "#00E5FF",
+    "secondary": "#00E676",
+    "surface": "#0A192F",
+    "glow": "rgba(0,229,255,0.35)"
+  },
+  "model": {
+    "title": "Capacity fade · assumption sensitivity",
+    "timeUnit": "cycles",
+    "horizon": 1000,
+    "parameters": [
+      {
+        "key": "fadePer1000Pct",
+        "label": "Base fade coefficient",
+        "unit": "% / 1k cycles",
+        "min": 2,
+        "max": 40,
+        "step": 1,
+        "default": 18,
+        "calibration": "Illustrative input; verified against the declared analytical model, not field measurements."
+      },
+      {
+        "key": "temperatureC",
+        "label": "Cell temperature",
+        "unit": "°C",
+        "min": 10,
+        "max": 50,
+        "step": 1,
+        "default": 25,
+        "calibration": "Illustrative input; verified against the declared analytical model, not field measurements."
+      },
+      {
+        "key": "cRate",
+        "label": "Cycling rate",
+        "unit": "C",
+        "min": 0.2,
+        "max": 3,
+        "step": 0.1,
+        "default": 1,
+        "calibration": "Illustrative input; verified against the declared analytical model, not field measurements."
+      },
+      {
+        "key": "initialCapacityAh",
+        "label": "Initial capacity",
+        "unit": "Ah",
+        "min": 10,
+        "max": 200,
+        "step": 5,
+        "default": 100,
+        "calibration": "Illustrative input; verified against the declared analytical model, not field measurements."
+      }
+    ],
+    "metrics": [
+      {
+        "key": "retentionPct",
+        "label": "Capacity retention",
+        "unit": "%",
+        "decimals": 1
+      },
+      {
+        "key": "capacityAh",
+        "label": "Remaining capacity",
+        "unit": "Ah",
+        "decimals": 1
+      },
+      {
+        "key": "resistanceGrowthPct",
+        "label": "Resistance growth",
+        "unit": "%",
+        "decimals": 1
+      },
+      {
+        "key": "throughputKWh",
+        "label": "Energy throughput",
+        "unit": "kWh",
+        "decimals": 1
+      }
+    ],
+    "equation": "k = (f/100000) · exp((T−25)/20) · √C-rate; retention = 100 exp(−kt); capacity = Q₀ exp(−kt).",
+    "assumptions": [
+      "A transparent exponential fade curve is an educational proxy, not a fitted lifetime prediction.",
+      "Temperature and C-rate remain constant for every cycle.",
+      "Throughput integrates remaining capacity at an illustrative 3.7 V cell voltage; calendar aging is omitted.",
+      "The bundled quickstart CSV and browser scenarios are synthetic; the optional Oxford workflow downloads separately licensed measurements.",
+      "Browser temperature and C-rate factors are deliberately coupled to the proxy; bcla’s Arrhenius utility is separate from its fitted trajectories.",
+      "No browser preset is a measured-cell calibration, remaining-life forecast, or statistical confidence interval."
+    ],
+    "kind": "degradation",
+    "introduction": "The 1,000-cycle horizon is a fixed synthetic teaching window, independent of observed data; it neither computes EOL nor bypasses the native projection limit of three times the largest observed cycle. This exponential toy curve is separate from bcla’s three fitted model forms. It performs no regression, holdout selection, EOL search, or bootstrap; use the native commands for those results.",
+    "calibration_status": "Uncalibrated synthetic teaching proxy"
+  },
+  "modules": [
     {
-      "id": "L01",
-      "title": "Raw Cycling Dataset Cleansing & Capacity/IR Feature Extraction",
-      "level": "Beginner",
-      "duration": "30 mins",
-      "config_file": "config/pipeline_cleansing.yaml",
-      "summary": "Ingest multi-channel cycler logs (Arbin/Maccor/Neware), strip outlier cycles, and isolate differential capacity (dQ/dV) peaks.",
-      "inputs": [
-        "Raw battery cycling CSV files",
-        "End of charge/discharge voltage cutoff definitions"
+      "id": "module-1",
+      "title": "Normalize before comparing trajectories",
+      "objective": "Distinguish capacity in Ah from retention relative to the initial observation.",
+      "minutes": 12,
+      "steps": [
+        "Read the twelve rows in data/quickstart.csv and its synthetic-data statement.",
+        "Apply the 100 Ah browser proxy at 25°C and 1C; predict the relationship between Ah and percent retention.",
+        "Run to 1,000 cycles and compare the two units before opening the native CLI example."
       ],
-      "parameters": {
-        "CurrentTolerance_A": 0.005,
-        "OutlierZScoreThreshold": 3.0,
-        "SmoothingSpline_s": 0.002
+      "preset": {
+        "fadePer1000Pct": 18,
+        "temperatureC": 25,
+        "cRate": 1,
+        "initialCapacityAh": 100
       },
       "checkpoints": [
-        "Verify capacity curve monotonically trending downward",
-        "Extract internal resistance R_int trajectory"
-      ]
+        {
+          "label": "Normalized retention after 1,000 cycles",
+          "metric": "retentionPct",
+          "operator": "==",
+          "expected": 83.527021,
+          "tolerance": 0.02,
+          "atTime": 1000
+        },
+        {
+          "label": "Remaining capacity at the same horizon",
+          "metric": "capacityAh",
+          "operator": "==",
+          "expected": 83.527021,
+          "tolerance": 0.02,
+          "atTime": 1000
+        }
+      ],
+      "reflection": "Why must the 3 Ah synthetic CSV and this 100 Ah teaching case remain separately identified even if their normalized curves look similar?",
+      "source_paths": [
+        "data/quickstart.csv",
+        "bcla/datasets.py",
+        "README.md"
+      ],
+      "level": "Foundation"
     },
     {
-      "id": "L02",
-      "title": "Empirical Power-Law & SEI Growth Mechanistic Curve Fitting",
-      "level": "Intermediate",
-      "duration": "45 mins",
-      "config_file": "config/degradation_models.yaml",
-      "summary": "Fit square-root diffusion-limited SEI models alongside dual-exponential loss-of-lithium-inventory (LLI) functions using Scipy curve_fit.",
-      "inputs": [
-        "Cycle index series [1..2000]",
-        "Normalized discharge capacity array"
+      "id": "module-2",
+      "title": "Separate model selection from a visual fit",
+      "objective": "Explain why a changing stress assumption is not evidence that a fitted model predicts held-out data.",
+      "minutes": 15,
+      "steps": [
+        "Increase temperature to 35°C and keep all other browser parameters fixed.",
+        "Predict the retention direction and record the changed result.",
+        "Read select_model_by_validation and the temporal-holdout tests; identify which observations select the native model."
       ],
-      "parameters": {
-        "SEI_Rate_Constant_alpha": 0.0018,
-        "LLI_Exponent_beta": 0.52,
-        "LossOfActiveMaterial_gamma": 1.2e-05
+      "preset": {
+        "fadePer1000Pct": 18,
+        "temperatureC": 35,
+        "cRate": 1,
+        "initialCapacityAh": 100
       },
       "checkpoints": [
-        "R-squared goodness of fit > 0.992",
-        "Validate AIC/BIC model selection criteria"
-      ]
+        {
+          "label": "Warm-case retention under the proxy equation",
+          "metric": "retentionPct",
+          "operator": "==",
+          "expected": 74.321506,
+          "tolerance": 0.02,
+          "atTime": 1000
+        },
+        {
+          "label": "Warm-case capacity under the same assumptions",
+          "metric": "capacityAh",
+          "operator": "==",
+          "expected": 74.321506,
+          "tolerance": 0.02,
+          "atTime": 1000
+        }
+      ],
+      "reflection": "Why does lower training RMSE not establish that a model will forecast later cycles or an independent cell?",
+      "source_paths": [
+        "bcla/core.py",
+        "tests/test_core.py"
+      ],
+      "level": "Parameter study"
     },
     {
-      "id": "L03",
-      "title": "Non-Parametric Bootstrap Resampling & 95% RUL Confidence Bounds",
-      "level": "Advanced",
-      "duration": "60 mins",
-      "config_file": "config/bootstrap_uncertainty.yaml",
-      "summary": "Generate 1,000 synthetic degradation paths via residual resampling to project probabilistic distribution of cycle-to-80% EOL.",
-      "inputs": [
-        "Optimal model fitted parameters",
-        "Historical residuals vector"
+      "id": "module-3",
+      "title": "Stress the extrapolation boundary",
+      "objective": "Identify the additional evidence needed when duty conditions change.",
+      "minutes": 18,
+      "steps": [
+        "Retain 35°C and double cycling rate to 2C.",
+        "Run the stress case and inspect retention alongside cumulative proxy throughput.",
+        "Read the native EOL horizon and bootstrap-censoring rules; distinguish a bounded missing estimate from a zero-life estimate."
       ],
-      "parameters": {
-        "Bootstrap_Iterations": 1000,
-        "Confidence_Level": 0.95,
-        "EOL_Threshold_pct": 80.0
+      "preset": {
+        "fadePer1000Pct": 18,
+        "temperatureC": 35,
+        "cRate": 2,
+        "initialCapacityAh": 100
       },
       "checkpoints": [
-        "Derive lower/upper cycle bounds [C_lower, C_upper]",
-        "Construct kernel density estimation (KDE) plot of RUL"
-      ]
+        {
+          "label": "Stress-case retention is below the baseline",
+          "metric": "retentionPct",
+          "operator": "==",
+          "expected": 65.724665,
+          "tolerance": 0.02,
+          "atTime": 1000
+        },
+        {
+          "label": "Stress-case illustrative throughput",
+          "metric": "throughputKWh",
+          "operator": "==",
+          "expected": 302.168154,
+          "tolerance": 0.02,
+          "atTime": 1000
+        }
+      ],
+      "reflection": "What protocol, model-form, and serial-residual effects are absent from a residual-bootstrap interval?",
+      "source_paths": [
+        "bcla/core.py",
+        "tests/test_core.py",
+        "docs/oxford-energy-trading.md"
+      ],
+      "level": "Stress test"
     },
     {
-      "id": "L04",
-      "title": "Automated Degradation Knee-Point Detection & Early Retirement Alert",
-      "level": "Production",
-      "duration": "75 mins",
-      "config_file": "config/knee_point_detector.yaml",
-      "summary": "Formulate curvature maximization algorithms to identify second-derivative inflection points where degradation transitions from linear to exponential.",
-      "inputs": [
-        "Long-term cycling sequence",
-        "Incremental capacity trajectory"
+      "id": "module-4",
+      "title": "Prepare a bounded life-analysis record",
+      "objective": "Record provenance and limitations before reporting a native model result.",
+      "minutes": 18,
+      "steps": [
+        "Use 50 Ah initial capacity, 25°C, 1C, and a base fade coefficient of 10.",
+        "Run and export the scenario; label its curve as a sensitivity assumption rather than a fit.",
+        "Outline a native analysis record containing cell identity, source, chronological split, selected model, projection bound, and any unavailable interval."
       ],
-      "parameters": {
-        "CurvatureWindow_Cycles": 50,
-        "AccelerationThreshold": 0.00045
+      "preset": {
+        "fadePer1000Pct": 10,
+        "temperatureC": 25,
+        "cRate": 1,
+        "initialCapacityAh": 50
       },
       "checkpoints": [
-        "Alert trigger 150 cycles prior to catastrophic rollover",
-        "Export publication-grade vector graphics (.pdf/.svg)"
-      ]
+        {
+          "label": "Gentler-case retention at the fixed horizon",
+          "metric": "retentionPct",
+          "operator": "==",
+          "expected": 90.483742,
+          "tolerance": 0.02,
+          "atTime": 1000
+        },
+        {
+          "label": "Remaining capacity respects the 50 Ah scale",
+          "metric": "capacityAh",
+          "operator": "==",
+          "expected": 45.241871,
+          "tolerance": 0.02,
+          "atTime": 1000
+        }
+      ],
+      "reflection": "Which conclusions would remain conditional even if all software tests and bootstrap replicates passed?",
+      "source_paths": [
+        "bcla/core.py",
+        "bcla/datasets.py",
+        "notebooks/demo.ipynb",
+        "README.md"
+      ],
+      "level": "Transfer to source"
     }
-  ]
+  ],
+  "source": {
+    "commit": "c286723f9d17e5d7274f49e52a0a711633dc6ceb",
+    "audited_at": "2026-10-19T08:39:24Z",
+    "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/tree/c286723f9d17e5d7274f49e52a0a711633dc6ceb",
+    "calibration_status": "synthetic-analytical-fixtures",
+    "scope": "This browser lab is a standalone teaching approximation. Use the linked source for the project implementation."
+  },
+  "dashboard_url": "https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/"
 }
