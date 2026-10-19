@@ -6,7 +6,7 @@ The Python package fits linear, power-law, and logarithmic capacity-fade models 
 
 ## Previous animations
 
-[Open the previous-animation gallery](https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/animations/) · [Local gallery](docs/animations/index.html)
+[Open the live lab](https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/) → **Previous animations** · [Open the local gallery](docs/animations/index.html)
 
 Earlier animated artwork, waveform demos, and original interactive experiences are linked alongside the current animations.
 
