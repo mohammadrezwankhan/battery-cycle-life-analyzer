@@ -4,6 +4,12 @@ The Python package fits linear, power-law, and logarithmic capacity-fade models 
 
 **[Native-source lesson guide](docs/portfolio/) · [Offline interactive lab](docs/index.html) · [Lesson configuration](docs/lesson-config.json) · [Configuration schema](docs/lesson-config.schema.json)**
 
+## Previous animations
+
+[Open the live lab](https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/) → **Previous animations** · [Open the local gallery](docs/animations/index.html)
+
+Earlier animated artwork, waveform demos, and original interactive experiences are linked alongside the current animations.
+
 ## Your first interactive result
 
 1. Download or clone this repository and open `docs/index.html` in a modern browser.
