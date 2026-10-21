@@ -1,0 +1,6 @@
+{
+  "repository": "battery-cycle-life-analyzer",
+  "diagrams": [],
+  "fidelity": {},
+  "reason": "Degradation and uncertainty focus; the available diagrams do not describe its RUL model."
+}

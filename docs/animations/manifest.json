@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "repository": "battery-cycle-life-analyzer",
+  "preserved_current_commit": "361bb6208d25246ec4392c9617f62f18f18a0ab3",
+  "animations": [
+    {
+      "kind": "image",
+      "title": "Original floating-layer SVG",
+      "badge": "Earlier animated media",
+      "description": "Floating isometric tiers, pulsing circuits, and flowing dashed traces from the earlier repository hero.",
+      "format": "Animated SVG",
+      "preview": "media/hero-25d-cbf302005ff1.svg",
+      "preview_sha256": "921f5e1456c81346140305d8d4ac91cae0f42e10b81d4a805391afa82b98d8e5",
+      "motion_identity": "cbf302005ff16758600ba48f87605c7f6128d021de4d4865c66fd458b737e649",
+      "sources": [
+        {
+          "path": "assets/hero-25d.svg",
+          "commit": "13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e",
+          "sha256": "bbf04969c3c736bb1b4c220a2316a3426bdaa3250473c06ec1bed8bfb9341ea7",
+          "blob": "2741c3b5da0ab14194bfb373a6eb87de729b4d5d",
+          "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/assets/hero-25d.svg"
+        },
+        {
+          "path": "assets/hero-25d.svg",
+          "commit": "478db04da72b83654dc6d14b9492cd4b0cf9d0f9",
+          "sha256": "2ba53b9ed90a98ca11ef16a1d28ed86e434de1fb484bb1fffc958a8af407fcf4",
+          "blob": "a319123534473a6d8879775ad5f6e9fb099067cd",
+          "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/478db04da72b83654dc6d14b9492cd4b0cf9d0f9/assets/hero-25d.svg"
+        }
+      ]
+    },
+    {
+      "kind": "waveform",
+      "title": "Original interactive waveform",
+      "badge": "Previous dashboard animation",
+      "description": "The earlier 2.5D perspective card and its moving waveform, with the original visual formulas and sliders.",
+      "preview": "waveform.html",
+      "preview_sha256": "f736e57d7c246c6228b821426a886baa974f3f541b28a7c4597f4b3cca843bb5",
+      "sources": [
+        {
+          "path": "docs/index.html",
+          "commit": "13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e",
+          "blob": "f803855022b6680fc1f70a6e6c6bbfdc5a97fbd5",
+          "sha256": "2c9f4e446d25620d9e63aaf581343e6cd4641bdcab9c6a0d780e7e818d525ea1",
+          "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/13e9dfcd7ca6bccd9f0406093ea83a99e4e8628e/docs/index.html"
+        },
+        {
+          "path": "docs/index.html",
+          "commit": "478db04da72b83654dc6d14b9492cd4b0cf9d0f9",
+          "blob": "ffa31e24097d4e178fd22ad8b55e77805a50ef49",
+          "sha256": "15c609db853d41d5621bc0707fcc41f63c3db2f01de3eec7c8681841d72ea942",
+          "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/478db04da72b83654dc6d14b9492cd4b0cf9d0f9/docs/index.html"
+        }
+      ]
+    }
+  ],
+  "native_links": [],
+  "historical_source_links": []
+}
