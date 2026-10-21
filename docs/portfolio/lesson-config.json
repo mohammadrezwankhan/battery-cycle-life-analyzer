@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "repository": "mohammadrezwankhan/battery-cycle-life-analyzer",
+  "display_name": "Battery Cycle-Life Analyzer",
+  "description": "Fit battery degradation models with chronological holdouts, bounded lifetime estimates and provenance-aware inputs.",
+  "domain": "DOMAIN_A",
+  "theme": {
+    "accent": "#00E5FF",
+    "secondary": "#00E676",
+    "surface": "#0A192F",
+    "glow": "rgba(0, 229, 255, 0.35)",
+    "label": "Energy systems",
+    "short": "Energy"
+  },
+  "repo_type": "library",
+  "source_revision": "c286723f9d17e5d7274f49e52a0a711633dc6ceb",
+  "source_snapshot_date": "2026-10-19",
+  "repo_url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer",
+  "homepage": "https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/",
+  "upstream": null,
+  "lessons": [
+    {
+      "id": "path-01",
+      "title": "Inspect a single-cell input",
+      "summary": "Read the bundled twelve-observation synthetic CSV and contrast it with the long-form per-cell loader.",
+      "objective": "Choose one cell and preserve capacity units and source context before fitting.",
+      "checkpoint": "Confirm cycle and capacity columns exist; identify the synthetic provenance and first-observation normalization.",
+      "level": "Foundation",
+      "tags": [
+        "foundations",
+        "engineering",
+        "data-provenance"
+      ],
+      "source_paths": [
+        "README.md",
+        "data/quickstart.csv",
+        "data/cycle_metadata_example.csv",
+        "bcla/datasets.py"
+      ],
+      "source_urls": [
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/README.md",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/data/quickstart.csv",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/data/cycle_metadata_example.csv",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/bcla/datasets.py"
+      ],
+      "parameters": [
+        {
+          "name": "cycle",
+          "description": "Cycle index column used by the CSV loader",
+          "default": "cycle",
+          "unit": "cycles",
+          "source_path": "bcla/__main__.py",
+          "definition_basis": "documented_or_source_default"
+        },
+        {
+          "name": "capacity",
+          "description": "Capacity column normalized by its first observation unless normalization is disabled",
+          "default": "capacity",
+          "unit": "source units, then fraction",
+          "source_path": "bcla/__main__.py",
+          "definition_basis": "documented_or_source_default"
+        }
+      ],
+      "command": null,
+      "native_id": null,
+      "native_route": null,
+      "execution_status": "source-linked guide; no execution by this dashboard"
+    },
+    {
+      "id": "path-02",
+      "title": "Compare models on a chronological holdout",
+      "summary": "Follow the CLI path from earlier training observations to held-out model selection and full-data refit.",
+      "objective": "Distinguish held-out selection from in-sample diagnostics.",
+      "checkpoint": "Expected documentation contract: a Selected model line reports held-out RMSE; fitted curves alone are not forecast validation.",
+      "level": "Foundation",
+      "tags": [
+        "foundations",
+        "engineering",
+        "forecasting",
+        "evidence"
+      ],
+      "source_paths": [
+        "README.md",
+        "bcla/__main__.py",
+        "bcla/core.py",
+        "tests/test_core.py"
+      ],
+      "source_urls": [
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/README.md",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/bcla/__main__.py",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/bcla/core.py",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/tests/test_core.py"
+      ],
+      "parameters": [
+        {
+          "name": "--model",
+          "description": "Model family; all compares linear, power_law and logarithmic",
+          "default": "all",
+          "unit": "choice",
+          "source_path": "bcla/__main__.py",
+          "definition_basis": "documented_or_source_default"
+        },
+        {
+          "name": "--validation-fraction",
+          "description": "Fraction of latest observations held out; must lie strictly between 0 and 1",
+          "default": 0.2,
+          "unit": "fraction",
+          "source_path": "bcla/__main__.py",
+          "definition_basis": "documented_or_source_default"
+        }
+      ],
+      "command": "python -m bcla --csv data/quickstart.csv --model all",
+      "native_id": null,
+      "native_route": null,
+      "execution_status": "source-linked guide; no execution by this dashboard"
+    },
+    {
+      "id": "path-03",
+      "title": "Review bounded EOL and bootstrap uncertainty",
+      "summary": "Inspect eol_cycle and residual-bootstrap behavior, including censored or failed replicates.",
+      "objective": "Recognize when the supported projection window does not yield an estimate.",
+      "checkpoint": "Check replicate counts and accept an unavailable interval when censoring or fitting failure occurs; no numerical interval has been generated in this audit.",
+      "level": "Applied",
+      "tags": [
+        "application",
+        "engineering",
+        "uncertainty"
+      ],
+      "source_paths": [
+        "README.md",
+        "bcla/core.py",
+        "bcla/__main__.py"
+      ],
+      "source_urls": [
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/README.md",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/bcla/core.py",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/bcla/__main__.py"
+      ],
+      "parameters": [
+        {
+          "name": "--bootstrap-samples",
+          "description": "Residual-bootstrap count; 0 disables, otherwise CLI requires at least 20",
+          "default": 0,
+          "unit": "replicates",
+          "source_path": "bcla/__main__.py",
+          "definition_basis": "documented_or_source_default"
+        }
+      ],
+      "command": "python -m bcla --model all --bootstrap-samples 500",
+      "native_id": null,
+      "native_route": null,
+      "execution_status": "source-linked guide; no execution by this dashboard"
+    },
+    {
+      "id": "path-04",
+      "title": "Trace measured-current provenance",
+      "summary": "Read the opt-in Oxford EFC workflow and its separately licensed source-data boundary.",
+      "objective": "Connect a measured-current example to source records, units, timestamp repairs and reproducibility limits.",
+      "checkpoint": "Identify Oxford data licensing, discharge-EFC convention and missing/irregular-time limitations before running or redistributing derived results.",
+      "level": "Applied",
+      "tags": [
+        "application",
+        "engineering",
+        "data-provenance",
+        "contribution",
+        "evidence"
+      ],
+      "source_paths": [
+        "docs/oxford-energy-trading.md",
+        "examples/oxford_energy_trading.py",
+        "tests/test_equivalent_full_cycles.py",
+        "CONTRIBUTING.md"
+      ],
+      "source_urls": [
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/docs/oxford-energy-trading.md",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/examples/oxford_energy_trading.py",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/tests/test_equivalent_full_cycles.py",
+        "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/c286723f9d17e5d7274f49e52a0a711633dc6ceb/CONTRIBUTING.md"
+      ],
+      "parameters": [],
+      "command": null,
+      "native_id": null,
+      "native_route": null,
+      "execution_status": "source-linked guide; no execution by this dashboard"
+    }
+  ]
+}
