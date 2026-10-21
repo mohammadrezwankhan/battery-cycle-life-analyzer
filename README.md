@@ -1,3 +1,61 @@
+![Battery Cycle-Life Lab: original vector system illustration](assets/hero-25d.svg)
+
+The Python package fits linear, power-law, and logarithmic capacity-fade models with chronological selection and bounded life projections. The browser exercise builds intuition for normalization and stress sensitivity.
+
+**[Native-source lesson guide](docs/portfolio/) · [Offline interactive lab](docs/index.html) · [Lesson configuration](docs/lesson-config.json) · [Configuration schema](docs/lesson-config.schema.json)**
+
+## Previous animations
+
+[Open the live lab](https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/) → **Previous animations** · [Open the local gallery](docs/animations/index.html)
+
+Earlier animated artwork, waveform demos, and original interactive experiences are linked alongside the current animations.
+
+## Your first interactive result
+
+1. Download or clone this repository and open `docs/index.html` in a modern browser.
+2. Select **Module 1**, apply its preset, and compare the declared checkpoint with the plotted result.
+3. Change one slider, inspect the model assumptions, then export the configuration or telemetry for your notes.
+
+The browser lab runs offline with no packages, accounts, or live data feeds. Its numbers are deterministic teaching simulations. Each checkpoint states its model time and tolerance; passing it demonstrates agreement with that model, not field calibration or production readiness. The degradation proxy uses a fixed synthetic 1,000-cycle window, independent of observed data; it does not compute EOL or bypass the native projection limit of three times the largest observed cycle.
+
+## Four-module learning path
+
+| Module | Investigation | Approximate time |
+|---|---|---:|
+| 1. Normalize before comparing trajectories | Distinguish capacity in Ah from retention relative to the initial observation. | 12 min |
+| 2. Separate model selection from a visual fit | Explain why a changing stress assumption is not evidence that a fitted model predicts held-out data. | 15 min |
+| 3. Stress the extrapolation boundary | Identify the additional evidence needed when duty conditions change. | 18 min |
+| 4. Prepare a bounded life-analysis record | Record provenance and limitations before reporting a native model result. | 18 min |
+
+**Who this is for:** Battery researchers, storage engineers, and students interpreting cycle-capacity observations.
+
+### Continue into the implementation
+
+- [README.md](README.md)
+- [pyproject.toml](pyproject.toml)
+- [bcla/core.py](bcla/core.py)
+- [bcla/**main**.py](bcla/__main__.py)
+- [bcla/datasets.py](bcla/datasets.py)
+- [data/quickstart.csv](data/quickstart.csv)
+- [docs/index.md](docs/index.md)
+
+### Explore or run the source
+
+Python 3.9+ for the native package; pip installs NumPy, SciPy, and Matplotlib. pytest is in the dev extra.
+
+```bash
+python -m pip install -e ".[dev]"
+python -m bcla --csv data/quickstart.csv --model all
+python -m pytest
+```
+
+These commands come from the audited source revision. Runtime requirements and the project's own validation limits are documented below; the standalone browser lab does not execute these commands.
+
+The detailed project guide below remains the source for installation, supported features, licences, and scientific limits. The browser equations and laboratory settings do not change the original application or numerical engine.
+
+<details>
+<summary>Project documentation, installation, attribution, and existing validation</summary>
+
 # Battery Cycle‑Life Analyzer (bcla)
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://python.org)
@@ -47,6 +105,14 @@ while retaining an explicit bound at three times the largest observed cycle.
 Requires Python 3.9 or newer. Runtime dependencies are NumPy, SciPy, and
 Matplotlib; `pip` installs them automatically.
 
+Install the published package from [PyPI](https://pypi.org/project/battery-cycle-life-analyzer/):
+
+```bash
+python -m pip install battery-cycle-life-analyzer==0.3.0
+```
+
+For repository examples, notebooks, or development, clone the source instead:
+
 ```bash
 git clone https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer.git
 cd battery-cycle-life-analyzer
@@ -61,6 +127,16 @@ python -m pytest
 ```
 
 ## Quick start
+
+After a PyPI installation, run a synthetic demo without downloading repository files:
+
+```bash
+python -m bcla --model linear
+```
+
+This prints fit diagnostics and saves `bcla_demo.png` in the current directory.
+The input is synthetic LFP data, not a measured-cell lifetime forecast. Repository
+CSV files, notebooks, and the Oxford example require the source checkout below.
 
 After installation, run the bundled single-cell CSV example from the repository
 root:
@@ -168,7 +244,6 @@ History columns:
 The parsed table is available on the returned object as
 `dataset.duty_cycle_history`, with interval summaries in
 `dataset.duty_cycle_history_validation`.
-
 
 `cycles_per_day` is an aggregate summary for the exported trace segment and can be
 non-integer (for example, `0.5` for one cycle every two days). If your lab workflow
@@ -395,7 +470,7 @@ operating window before drawing engineering conclusions.
 
 ## Project structure
 
-```
+```text
 battery-cycle-life-analyzer/
 ├── bcla/                    # Python library
 │   ├── __init__.py
@@ -467,3 +542,5 @@ If you use this in published work, please cite the repository:
 ## License
 
 [MIT](LICENSE)
+
+</details>

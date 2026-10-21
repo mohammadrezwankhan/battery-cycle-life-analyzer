@@ -5,6 +5,8 @@ title: Oxford Grid-Battery Real-Data Example
 
 # Oxford grid-battery real-data example
 
+![Section 03 · Reproduce / parameters](visuals/sections/section-03-reproduce.svg)
+
 This opt-in example applies the bcla workflow to the University of Oxford's
 energy-trading battery degradation dataset. The source contains one year of
 operation for six 16 Ah lithium-ion cells following three grid-trading control
