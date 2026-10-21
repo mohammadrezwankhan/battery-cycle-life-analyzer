@@ -1,0 +1,50 @@
+name: Validate release distributions without publishing
+on:
+  pull_request:
+    paths:
+      - .github/workflows/**
+      - pyproject.toml
+      - bcla/**
+permissions:
+  contents: read
+jobs:
+  distributions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Build and validate the same distributions used by the release job
+        run: |
+          python -m pip install build twine
+          python -m build
+          python -m twine check --strict dist/*
+      - name: Install candidate wheel and run CLI outside the checkout
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python - <<'PY'
+          import importlib.metadata
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+          import venv
+          root = Path(os.environ['RUNNER_TEMP']) / 'candidate-wheel-smoke'
+          venv.create(root, with_pip=True)
+          executable = root / 'bin/python'
+          wheel, = Path('dist').glob('*.whl')
+          subprocess.run([str(executable), '-m', 'pip', 'install', str(wheel.resolve())], check=True)
+          subprocess.run([str(executable), '-m', 'pip', 'check'], check=True)
+          subprocess.run([str(executable), '-c', "import bcla, pathlib, sys; assert pathlib.Path(sys.prefix).resolve() in pathlib.Path(bcla.__file__).resolve().parents"], cwd=root, check=True)
+          subprocess.run([str(executable), '-m', 'bcla', '--model', 'all'], cwd=root, check=True)
+          assert (root / 'bcla_demo.png').stat().st_size > 1000
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: validated-candidate-distributions
+          path: dist/
+          if-no-files-found: error
