@@ -1,0 +1,29 @@
+{
+  "@context": "https://w3id.org/codemeta/3.0",
+  "@type": "SoftwareSourceCode",
+  "name": "Battery Cycle-Life Analyzer",
+  "codeRepository": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer",
+  "url": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer",
+  "author": [
+    {
+      "@type": "Person",
+      "familyName": "Khan",
+      "givenName": "Mohammad Rezwan",
+      "@id": "https://orcid.org/0000-0002-1532-0598"
+    }
+  ],
+  "readme": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/HEAD/README.md",
+  "issueTracker": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/issues",
+  "continuousIntegration": "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions",
+  "relatedLink": [
+    "https://rezwankhan.tech/",
+    "https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/HEAD/CITATION.cff"
+  ],
+  "keywords": [
+    "battery degradation",
+    "cycle life",
+    "remaining useful life",
+    "capacity fade"
+  ],
+  "license": "https://spdx.org/licenses/MIT.html"
+}
