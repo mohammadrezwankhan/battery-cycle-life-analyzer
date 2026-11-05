@@ -4,7 +4,7 @@ viz — Publication\u2011quality plots for battery cycle\u2011life analysis.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +16,19 @@ from .core import FitResult, arrhenius_acceleration_factor
 
 # ── Global style ────────────────────────────────────────────────────────
 
-STYLE = {
+StyleKey = Literal[
+    "figure.dpi",
+    "figure.facecolor",
+    "axes.facecolor",
+    "axes.edgecolor",
+    "axes.grid",
+    "grid.alpha",
+    "font.size",
+    "axes.titlesize",
+    "axes.labelsize",
+]
+
+STYLE: dict[StyleKey, object] = {
     "figure.dpi": 150,
     "figure.facecolor": "white",
     "axes.facecolor": "white",
@@ -30,7 +42,8 @@ STYLE = {
 
 
 def _apply_style() -> None:
-    plt.rcParams.update(STYLE)
+    for k, v in STYLE.items():
+        plt.rcParams[k] = v
 
 
 # ── Single plot helpers ─────────────────────────────────────────────────
