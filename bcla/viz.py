@@ -30,8 +30,7 @@ STYLE = {
 
 
 def _apply_style() -> None:
-    for k, v in STYLE.items():
-        plt.rcParams[k] = v
+    plt.rcParams.update(STYLE)
 
 
 # ── Single plot helpers ─────────────────────────────────────────────────

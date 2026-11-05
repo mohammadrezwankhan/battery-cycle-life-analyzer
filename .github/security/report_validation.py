@@ -115,7 +115,8 @@ def inspect_trivy(report: Any, expected: set[str]) -> dict[str, int]:
     data = object_value(report, "Trivy report")
     if type(data.get("SchemaVersion")) is not int or data["SchemaVersion"] != 2:
         raise ValueError("Trivy schema version must be 2")
-    if data.get("ArtifactType") != "filesystem":
+    artifact_type = text_value(data.get("ArtifactType"), "Trivy artifact type")
+    if artifact_type not in {"filesystem", "repository"}:
         raise ValueError("Trivy report must describe the requested filesystem scan")
     if data.get("Errors") or data.get("Error"):
         raise ValueError("Trivy reported an analysis error")

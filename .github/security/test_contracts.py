@@ -629,6 +629,23 @@ class ScannerEvidenceTests(unittest.TestCase):
         report["vulnerabilities"]["example"]["severity"] = "high"
         self.assertEqual(report_validation.inspect_npm(report)["blocking_findings"], 1)
 
+    def test_trivy_accepts_git_checkout_reports_and_rejects_other_artifacts(self) -> None:
+        """Trivy classifies a clean Git checkout as a repository during fs scans."""
+        report: dict[str, Any] = {
+            "SchemaVersion": 2,
+            "ArtifactType": "repository",
+            "Results": [{"Target": "package-lock.json", "Class": "lang-pkgs", "Type": "npm"}],
+        }
+        self.assertEqual(
+            report_validation.inspect_trivy(report, {"package-lock.json"})["analyzed_targets"],
+            1,
+        )
+        artifacts: tuple[object, ...] = (None, "", "container_image", "vm", True, [], {})
+        for artifact in artifacts:
+            report["ArtifactType"] = artifact
+            with self.subTest(artifact=artifact), self.assertRaises(ValueError):
+                report_validation.inspect_trivy(report, {"package-lock.json"})
+
     def test_trivy_requires_analyzed_targets_and_detects_high_findings(self) -> None:
         """Absent finding fields are valid only with complete supported-target evidence."""
         report: dict[str, Any] = {"SchemaVersion": 2, "ArtifactType": "filesystem", "Results": [

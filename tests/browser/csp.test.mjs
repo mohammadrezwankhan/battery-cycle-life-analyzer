@@ -168,3 +168,65 @@ test('early policies preserve bytes with safe root attributes and inert whitespa
   assert.equal(withBrowserPolicy(after), after);
   assert.equal(withBrowserPolicy(withComment), withComment);
 });
+
+test('raw script and style opening attributes remain visible to the policy gate', () => {
+  for (const content of [
+    '<script onload="blocked()">const template = "<button onclick=blocked()>";</script>',
+    '<style onload="blocked()">p { color: red; }</style>',
+    '<script data-note="literal > text" onload="blocked()">const value = 1;</script>',
+  ]) {
+    const html = withBrowserPolicy('<!doctype html><head>' + content + '</head><body></body>');
+    assert.ok(
+      policyIssues(html).some((issue) => issue.startsWith('Inline event/style attribute:')),
+    );
+  }
+});
+
+test('raw element markers inside comments cannot hide later executable attributes', () => {
+  for (const kind of ['script', 'style']) {
+    const content =
+      '<!-- <' +
+      kind +
+      '> -->' +
+      '<button onclick="blocked()">Visible button</button>' +
+      '<' +
+      kind +
+      '>plain raw text</' +
+      kind +
+      '>';
+    const html = withBrowserPolicy('<!doctype html><head></head><body>' + content + '</body>');
+    assert.ok(policyIssues(html).some((issue) => issue.includes('<button onclick=')));
+  }
+});
+
+test('nested-looking raw text is skipped without rewriting the surrounding markup', () => {
+  const html = withBrowserPolicy(
+    '<!doctype html><head>' +
+      '<script>const template = "<script onload=blocked()><style style=blocked()>";</script>' +
+      '<style>p::before { content: "<button onclick=blocked()>"; }</style>' +
+      '</head><body><p>Ordinary content</p></body>',
+  );
+  assert.deepEqual(policyIssues(html), []);
+  assert.equal(withBrowserPolicy(html), html);
+});
+
+test('unclosed raw text elements fail the policy inspection', () => {
+  for (const tag of ['script', 'style']) {
+    const html = withBrowserPolicy('<!doctype html><head></head><body><' + tag + '>plain text');
+    assert.ok(policyIssues(html).some((issue) => issue.includes('Unclosed raw text element')));
+  }
+});
+
+test('raw element markers in text-only elements cannot hide later executable attributes', () => {
+  for (const tag of ['title', 'textarea', 'iframe', 'xmp']) {
+    const html = withBrowserPolicy(
+      '<!doctype html><head></head><body><' +
+        tag +
+        '><script>inert text</' +
+        tag +
+        '>' +
+        '<button onclick="blocked()">Visible button</button><script>const value = 1;</script></body>',
+    );
+    assert.ok(policyIssues(html).some((issue) => issue.includes('<button onclick=')));
+  }
+});

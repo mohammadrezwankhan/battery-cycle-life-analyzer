@@ -129,6 +129,72 @@ export function withBrowserPolicy(html) {
   }
   return html.slice(0, headEnd) + '\n' + meta + html.slice(headEnd);
 }
+/**
+ * Inspect original start tags, skipping comments and HTML raw/text-only bodies by
+ * their offsets. No HTML is removed or reconstructed for this inspection.
+ * @param {string} html
+ * @returns {string[]}
+ */
+function policyStartTags(html) {
+  const tags = [];
+  const textOnly = new Set([
+    'script',
+    'style',
+    'title',
+    'textarea',
+    'xmp',
+    'iframe',
+    'noembed',
+    'noframes',
+    'noscript',
+  ]);
+  let offset = 0;
+  while (offset < html.length) {
+    const start = html.indexOf('<', offset);
+    if (start < 0) break;
+    if (html.startsWith('<!--', start)) {
+      const end = html.indexOf('-->', start + 4);
+      const comment = html.slice(start + 4, end);
+      if (end < 0 || comment.includes('--!>') || /^(?:>|->)/.test(comment))
+        throw new Error('Ambiguous HTML comment in policy inspection.');
+      offset = end + 3;
+      continue;
+    }
+    const doctype = /^<!doctype[\t\n\f\r ]+html[\t\n\f\r ]*>/i.exec(html.slice(start));
+    if (doctype) {
+      offset = start + doctype[0].length;
+      continue;
+    }
+    const match =
+      /^<\/?([A-Za-z][A-Za-z0-9:_-]*)(?=[\t\n\f\r />])(?:[^"'<>]|"[^"]*"|'[^']*')*>/.exec(
+        html.slice(start),
+      );
+    if (!match) {
+      if (/[A-Za-z/!?]/.test(html.charAt(start + 1)))
+        throw new Error('Malformed HTML tag in policy inspection.');
+      offset = start + 1;
+      continue;
+    }
+    const name = match[1]?.toLowerCase();
+    if (!name) throw new Error('Incomplete policy tag capture.');
+    offset = start + match[0].length;
+    if (html.startsWith('</', start)) continue;
+    tags.push(match[0]);
+    if (name === 'plaintext') break;
+    if (!textOnly.has(name)) continue;
+    const closing =
+      /<\/(script|style|title|textarea|xmp|iframe|noembed|noframes|noscript)(?=[\t\n\f\r />])(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi;
+    closing.lastIndex = offset;
+    let end;
+    while ((end = closing.exec(html))) {
+      if (end[1]?.toLowerCase() === name) break;
+    }
+    if (!end) throw new Error('Unclosed raw text element in policy inspection: ' + name);
+    offset = closing.lastIndex;
+  }
+  return tags;
+}
+
 /** @param {string} html @returns {string[]} */
 export function policyIssues(html) {
   let updated;
@@ -144,13 +210,18 @@ export function policyIssues(html) {
     issues.push(
       'CSP is missing or inline hashes are stale; run browser-csp.mjs --write on this file.',
     );
-  // Ignore raw script/style content: templates are checked by the rendering-boundary tests.
-  const markup = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
-  for (const match of markup.matchAll(/<[A-Za-z][^>]*>/g)) {
-    if (/\s(?:on[a-z]+|style)\s*=/i.test(match[0]))
-      issues.push('Inline event/style attribute: ' + match[0].slice(0, 100));
-    if (/\b(?:src|href)\s*=\s*["']javascript:/i.test(match[0]))
-      issues.push('Executable URL attribute.');
+  let tags;
+  try {
+    tags = policyStartTags(html);
+  } catch (error) {
+    if (!(error instanceof Error)) throw error;
+    issues.push(error.message);
+    return issues;
+  }
+  for (const tag of tags) {
+    if (/\s(?:on[a-z]+|style)\s*=/i.test(tag))
+      issues.push('Inline event/style attribute: ' + tag.slice(0, 100));
+    if (/\b(?:src|href)\s*=\s*["']javascript:/i.test(tag)) issues.push('Executable URL attribute.');
   }
   return issues;
 }
