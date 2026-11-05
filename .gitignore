@@ -26,3 +26,11 @@ bcla_demo.png
 model_comparison.png
 temperature_effect.png
 chemistry_comparison.png
+
+# Development tools and generated verification output
+node_modules/
+.mypy_cache/
+.ruff_cache/
+.coverage
+hardening-artifacts/
+.security-tools/

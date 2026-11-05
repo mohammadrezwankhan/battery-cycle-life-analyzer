@@ -1,16 +1,16 @@
 """
-core — Degradation models and curve fitting for battery cycle‑life data.
+core - Degradation models and curve fitting for battery cycle-life data.
 """
 
 from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Callable, Literal, Optional
 
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
 from scipy.optimize import curve_fit
-
 
 # ── Models (curve_fit convention: x first, then parameters) ──────────────
 
@@ -20,41 +20,44 @@ def _linear(cycle: np.ndarray, q0: float, k: float) -> np.ndarray:
     return q0 - k * cycle
 
 
-def _power_law(cycle: np.ndarray, q0: float, alpha: float,
-               beta: float) -> np.ndarray:
-    """Q(cycle) = Q0 - α * cycle^β  (β near 0.5 → diffusion‑limited)"""
-    return q0 - alpha * cycle ** beta
+def _power_law(cycle: np.ndarray, q0: float, alpha: float, beta: float) -> np.ndarray:
+    """Q(cycle) = Q0 - α * cycle^β  (β near 0.5 → diffusion-limited)"""
+    return q0 - alpha * cycle**beta
 
 
-def _logarithmic(cycle: np.ndarray, q0: float, a: float,
-                 b: float) -> np.ndarray:
+def _logarithmic(cycle: np.ndarray, q0: float, a: float, b: float) -> np.ndarray:
     """Q(cycle) = Q0 - a * ln(1 + b * cycle)"""
     return q0 - a * np.log(1.0 + b * cycle)
 
 
 # Each entry: (callable, parameter_names, bounds_lower_upper)
-MODEL_REGISTRY: dict[str, tuple] = {
-    "linear":       (_linear,       ["Q0", "k"],       [[0.5, 1.5], [0.0, 1.0]]),
-    "power_law":    (_power_law,    ["Q0", "α", "β"],  [[0.5, 1.5], [0.0, 5.0], [0.1, 2.0]]),
-    "logarithmic":  (_logarithmic,  ["Q0", "a", "b"],  [[0.5, 1.5], [0.0, 1.0], [0.0, 1e5]]),
+ModelFunction = Callable[..., NDArray[np.float64]]
+ModelDefinition = tuple[ModelFunction, list[str], list[list[float]]]
+
+
+MODEL_REGISTRY: dict[str, ModelDefinition] = {
+    "linear": (_linear, ["Q0", "k"], [[0.5, 1.5], [0.0, 1.0]]),
+    "power_law": (_power_law, ["Q0", "α", "β"], [[0.5, 1.5], [0.0, 5.0], [0.1, 2.0]]),
+    "logarithmic": (_logarithmic, ["Q0", "a", "b"], [[0.5, 1.5], [0.0, 1.0], [0.0, 1e5]]),
 }
 
 
-def _model_func(name: str):
+def _model_func(name: str) -> ModelFunction:
     return MODEL_REGISTRY[name][0]
 
 
-def _model_pnames(name: str):
+def _model_pnames(name: str) -> list[str]:
     return MODEL_REGISTRY[name][1]
 
 
-def _model_bounds(name: str):
+def _model_bounds(name: str) -> list[list[float]]:
     return MODEL_REGISTRY[name][2]
 
 
 @dataclass
 class FitResult:
-    """Result of fitting a degradation model to cycle‑data."""
+    """Result of fitting a degradation model to cycle-data."""
+
     model_name: str
     params: dict[str, float]
     pcov: np.ndarray
@@ -70,11 +73,15 @@ class FitResult:
             raise ValueError("target_cycles must be finite and non-negative")
         func = _model_func(self.model_name)
         p0 = [self.params[n] for n in _model_pnames(self.model_name)]
-        prediction = np.asarray(
-            func(np.array([target_cycles], dtype=float), *p0),
-            dtype=float,
-        )
-        return float(prediction.reshape(-1)[0])
+        with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+            prediction = np.asarray(
+                func(np.array([target_cycles], dtype=float), *p0),
+                dtype=float,
+            )
+        value = float(prediction.reshape(-1)[0])
+        if not np.isfinite(value):
+            raise ValueError("projected capacity must be representable as a finite float")
+        return value
 
     def eol_cycle(self, eol_fraction: float = 0.8) -> Optional[float]:
         """
@@ -89,10 +96,15 @@ class FitResult:
         pnames = _model_pnames(self.model_name)
         p0 = [self.params[n] for n in pnames]
         max_cycle = float(self.cycles.max()) * 3.0
+        if not np.isfinite(max_cycle):
+            raise ValueError("EOL search horizon must be representable as a finite float")
         q0 = self.params["Q0"]
 
         candidates = np.linspace(0, max_cycle, 100_000)
-        pred = func(candidates, *p0)
+        with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+            pred = func(candidates, *p0)
+        if not np.all(np.isfinite(pred)):
+            raise ValueError("EOL predictions must be representable as finite floats")
         idx = np.where(pred <= q0 * eol_fraction)[0]
         if len(idx) == 0:
             return None
@@ -163,13 +175,15 @@ class LifeProjectionInterval:
 
 # ── Fitting ─────────────────────────────────────────────────────────────
 
-def fit_capacity_fade(cycles: np.ndarray,
-                      capacity: np.ndarray,
-                      model: str = "power_law",
-                      q0_guess: Optional[float] = None
-                      ) -> FitResult:
+
+def fit_capacity_fade(
+    cycles: ArrayLike,
+    capacity: ArrayLike,
+    model: str = "power_law",
+    q0_guess: Optional[float] = None,
+) -> FitResult:
     """
-    Fit a degradation model to cycle‑life data.
+    Fit a degradation model to cycle-life data.
 
     Parameters
     ----------
@@ -226,8 +240,8 @@ def fit_capacity_fade(cycles: np.ndarray,
 
     predicted = func(x, *popt)
     residuals = y - predicted
-    rmse = float(np.sqrt(np.mean(residuals ** 2)))
-    ss_res = np.sum(residuals ** 2)
+    rmse = float(np.sqrt(np.mean(residuals**2)))
+    ss_res = np.sum(residuals**2)
     ss_tot = np.sum((y - np.mean(y)) ** 2)
     r_sq = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
 
@@ -244,31 +258,23 @@ def fit_capacity_fade(cycles: np.ndarray,
     )
 
 
-def fit_all_models(cycles: np.ndarray,
-                   capacity: np.ndarray
-                   ) -> dict[str, FitResult]:
+def fit_all_models(cycles: np.ndarray, capacity: np.ndarray) -> dict[str, FitResult]:
     """Fit every registered model and return a name→result dict."""
-    return {
-        name: fit_capacity_fade(cycles, capacity, model=name)
-        for name in MODEL_REGISTRY
-    }
+    return {name: fit_capacity_fade(cycles, capacity, model=name) for name in MODEL_REGISTRY}
 
 
-def best_model(results: dict[str, FitResult],
-               criterion: Literal["rmse", "r_squared"] = "rmse"
-               ) -> tuple[str, FitResult]:
+def best_model(
+    results: dict[str, FitResult], criterion: Literal["rmse", "r_squared"] = "rmse"
+) -> tuple[str, FitResult]:
     """Return the best in-sample fit (not an extrapolation validation)."""
     if criterion == "rmse":
-        key = lambda kv: kv[1].rmse
-    elif criterion == "r_squared":
-        key = lambda kv: -kv[1].r_squared
-    else:
-        raise ValueError("criterion must be 'rmse' or 'r_squared'")
-    return min(results.items(), key=key)
+        return min(results.items(), key=lambda kv: kv[1].rmse)
+    if criterion == "r_squared":
+        return min(results.items(), key=lambda kv: -kv[1].r_squared)
+    raise ValueError("criterion must be 'rmse' or 'r_squared'")
 
 
-def _temporal_arrays(cycles: np.ndarray,
-                     capacity: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _temporal_arrays(cycles: ArrayLike, capacity: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
     """Validate and sort paired observations by cycle for temporal splitting."""
     x = np.asarray(cycles, dtype=float).ravel()
     y = np.asarray(capacity, dtype=float).ravel()
@@ -280,9 +286,7 @@ def _temporal_arrays(cycles: np.ndarray,
         raise ValueError("cycles and capacity must contain only finite values")
     if np.any(x < 0.0):
         raise ValueError("cycles must be non-negative")
-    minimum_unique_cycles = max(
-        len(_model_pnames(name)) + 1 for name in MODEL_REGISTRY
-    ) + 2
+    minimum_unique_cycles = max(len(_model_pnames(name)) + 1 for name in MODEL_REGISTRY) + 2
     if np.unique(x).size < minimum_unique_cycles:
         raise ValueError(
             f"at least {minimum_unique_cycles} distinct cycle values are required "
@@ -293,10 +297,10 @@ def _temporal_arrays(cycles: np.ndarray,
 
 
 def temporal_holdout_scores(
-        cycles: np.ndarray,
-        capacity: np.ndarray,
-        validation_fraction: float = 0.2,
-        ) -> dict[str, ValidationScore]:
+    cycles: ArrayLike,
+    capacity: ArrayLike,
+    validation_fraction: float = 0.2,
+) -> dict[str, ValidationScore]:
     """
     Score every model on the latest chronological observations.
 
@@ -321,13 +325,10 @@ def temporal_holdout_scores(
             split_index -= 1
     train_size = split_index
     validation_size = x.size - split_index
-    minimum_train_size = max(
-        len(_model_pnames(name)) + 1 for name in MODEL_REGISTRY
-    )
+    minimum_train_size = max(len(_model_pnames(name)) + 1 for name in MODEL_REGISTRY)
     if train_size < minimum_train_size:
         raise ValueError(
-            f"validation_fraction leaves fewer than {minimum_train_size} "
-            "training observations"
+            f"validation_fraction leaves fewer than {minimum_train_size} training observations"
         )
     if np.unique(x[:split_index]).size < minimum_train_size:
         raise ValueError(
@@ -344,18 +345,14 @@ def temporal_holdout_scores(
         params = [fitted.params[pname] for pname in _model_pnames(name)]
         predicted = func(x_validation, *params)
         if not np.all(np.isfinite(predicted)):
-            raise ValueError(
-                f"{name} produced non-finite predictions on the validation window"
-            )
+            raise ValueError(f"{name} produced non-finite predictions on the validation window")
         residuals = y_validation - predicted
-        rmse = float(np.sqrt(np.mean(residuals ** 2)))
-        ss_res = float(np.sum(residuals ** 2))
+        rmse = float(np.sqrt(np.mean(residuals**2)))
+        ss_res = float(np.sum(residuals**2))
         ss_tot = float(np.sum((y_validation - np.mean(y_validation)) ** 2))
         r_squared = 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
         if not np.isfinite(rmse):
-            raise ValueError(
-                f"{name} produced a non-finite RMSE on the validation window"
-            )
+            raise ValueError(f"{name} produced a non-finite RMSE on the validation window")
         scores[name] = ValidationScore(
             model_name=name,
             rmse=rmse,
@@ -368,11 +365,11 @@ def temporal_holdout_scores(
 
 
 def select_model_by_validation(
-        cycles: np.ndarray,
-        capacity: np.ndarray,
-        validation_fraction: float = 0.2,
-        criterion: Literal["rmse", "r_squared"] = "rmse",
-        ) -> ModelSelection:
+    cycles: ArrayLike,
+    capacity: ArrayLike,
+    validation_fraction: float = 0.2,
+    criterion: Literal["rmse", "r_squared"] = "rmse",
+) -> ModelSelection:
     """
     Select a model on a late-cycle holdout, then refit it on all observations.
 
@@ -394,8 +391,7 @@ def select_model_by_validation(
     else:
         if any(not np.isfinite(score.r_squared) for score in scores.values()):
             raise ValueError(
-                "r_squared is undefined for a constant validation window; "
-                "use criterion='rmse'"
+                "r_squared is undefined for a constant validation window; use criterion='rmse'"
             )
         model_name = max(scores, key=lambda name: scores[name].r_squared)
     fitted = fit_capacity_fade(x, y, model=model_name)
@@ -409,13 +405,13 @@ def select_model_by_validation(
 
 
 def bootstrap_life_projection(
-        result: FitResult,
-        eol_fraction: float = 0.8,
-        current_cycle: Optional[float] = None,
-        confidence: float = 0.95,
-        samples: int = 500,
-        random_state: Optional[int] = None,
-        ) -> LifeProjectionInterval:
+    result: FitResult,
+    eol_fraction: float = 0.8,
+    current_cycle: Optional[float] = None,
+    confidence: float = 0.95,
+    samples: int = 500,
+    random_state: Optional[int] = None,
+) -> LifeProjectionInterval:
     """
     Estimate bounded EOL/RUL intervals with a residual bootstrap.
 
@@ -452,8 +448,7 @@ def bootstrap_life_projection(
     parameter_count = len(_model_pnames(result.model_name))
     if cycles.size <= parameter_count or np.unique(cycles).size <= parameter_count:
         raise ValueError(
-            "bootstrap projection requires more distinct observations than "
-            "fitted parameters"
+            "bootstrap projection requires more distinct observations than fitted parameters"
         )
 
     if current_cycle is None:
@@ -468,9 +463,7 @@ def bootstrap_life_projection(
     residual_scale = float(np.std(centered_residuals, ddof=1))
     numerical_scale = max(1.0, float(np.max(np.abs(observed))))
     if residual_scale <= np.finfo(float).eps * numerical_scale:
-        raise ValueError(
-            "bootstrap projection requires positive residual variance"
-        )
+        raise ValueError("bootstrap projection requires positive residual variance")
     rng = np.random.default_rng(random_state)
     eol_samples: list[float] = []
     censored_samples = 0
@@ -509,11 +502,7 @@ def bootstrap_life_projection(
     eol_upper: Optional[float] = None
     rul_lower: Optional[float] = None
     rul_upper: Optional[float] = None
-    if (
-        censored_samples == 0
-        and failed_samples == 0
-        and successful_samples == samples
-    ):
+    if censored_samples == 0 and failed_samples == 0 and successful_samples == samples:
         alpha = (1.0 - confidence) / 2.0
         eol_array = np.asarray(eol_samples)
         eol_lower, eol_upper = (
@@ -525,11 +514,7 @@ def bootstrap_life_projection(
         )
 
     eol_estimate = result.eol_cycle(eol_fraction)
-    rul_estimate = (
-        None
-        if eol_estimate is None
-        else max(0.0, float(eol_estimate) - current_cycle)
-    )
+    rul_estimate = None if eol_estimate is None else max(0.0, float(eol_estimate) - current_cycle)
     return LifeProjectionInterval(
         model_name=result.model_name,
         confidence=confidence,
@@ -550,9 +535,10 @@ def bootstrap_life_projection(
 
 # ── Temperature compensation (Arrhenius) ────────────────────────────────
 
-def arrhenius_acceleration_factor(temperature_c: float,
-                                  reference_c: float = 25.0,
-                                  activation_ev: float = 0.5) -> float:
+
+def arrhenius_acceleration_factor(
+    temperature_c: float, reference_c: float = 25.0, activation_ev: float = 0.5
+) -> float:
     """
     Relative degradation acceleration factor from Arrhenius kinetics.
 
@@ -560,19 +546,21 @@ def arrhenius_acceleration_factor(temperature_c: float,
     ----------
     temperature_c : operating temperature °C.
     reference_c   : reference temperature °C (default 25).
-    activation_ev : activation energy in eV (typical 0.3–0.7 for Li‑ion).
+    activation_ev : activation energy in eV (typical 0.3-0.7 for Li-ion).
 
     Returns
     -------
     Acceleration factor ( >1 means faster degradation).
     """
-    if not all(np.isfinite(value) for value in (
-        temperature_c, reference_c, activation_ev
-    )):
+    if not all(np.isfinite(value) for value in (temperature_c, reference_c, activation_ev)):
         raise ValueError("temperatures and activation_ev must be finite")
     if temperature_c <= -273.15 or reference_c <= -273.15:
         raise ValueError("temperatures must be above absolute zero")
-    kB = 8.617333262e-5  # eV / K
+    k_b = 8.617333262e-5  # eV / K
     tk = temperature_c + 273.15
     tref = reference_c + 273.15
-    return float(np.exp(activation_ev / kB * (1.0 / tref - 1.0 / tk)))
+    with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+        factor = float(np.exp(activation_ev / k_b * (1.0 / tref - 1.0 / tk)))
+    if not np.isfinite(factor) or factor <= 0.0:
+        raise ValueError("acceleration factor must be representable as a finite positive float")
+    return factor

@@ -9,21 +9,20 @@ from __future__ import annotations
 import argparse
 import csv
 import io
+import sys
 from dataclasses import dataclass
+from http.client import HTTPMessage
 from pathlib import Path
-from typing import Any
-from urllib.request import Request, urlopen
+from typing import IO, Any, Optional
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 import numpy as np
 from numpy.typing import NDArray
 
 from bcla.datasets import equivalent_full_cycles
 
-
-OXFORD_RECORD_URL = (
-    "https://ora.ox.ac.uk/objects/"
-    "uuid:9aae61af-2949-49f1-8ad5-6aea448979e5"
-)
+OXFORD_RECORD_URL = "https://ora.ox.ac.uk/objects/uuid:9aae61af-2949-49f1-8ad5-6aea448979e5"
 OXFORD_DOI = "10.5287/bodleian:gJPdDzvP4"
 OXFORD_LICENSE = "ODC Open Database License (ODbL) 1.0"
 NOMINAL_CAPACITY_AH = 16.0
@@ -64,18 +63,51 @@ class _ProfileData:
     duplicate_samples: int
 
 
+def _validate_archive_url(url: str) -> None:
+    """Permit only the official archive origin, including every redirect hop."""
+    parsed = urlsplit(url)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname != "ora.ox.ac.uk"
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.port not in (None, 443)
+    ):
+        raise ValueError("Oxford downloads require HTTPS on ora.ox.ac.uk")
+
+
+class _ArchiveRedirectHandler(HTTPRedirectHandler):
+    def redirect_request(
+        self,
+        req: Request,
+        fp: IO[bytes],
+        code: int,
+        msg: str,
+        headers: HTTPMessage,
+        newurl: str,
+    ) -> Optional[Request]:
+        _validate_archive_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+# This opener enforces the same origin before each redirect, before network dispatch.
+urlopen = build_opener(_ArchiveRedirectHandler()).open
+
+
 def _download_text(url: str) -> str:
-    request = Request(url, headers={"User-Agent": "bcla-real-data-example/1.0"})
+    _validate_archive_url(url)
+    # S310: URL and every redirect hop are restricted to the official HTTPS origin.
+    request = Request(url, headers={"User-Agent": "bcla-real-data-example/1.0"})  # noqa: S310
     with urlopen(request, timeout=90) as response:
         payload = response.read(MAX_DOWNLOAD_BYTES + 1)
     if len(payload) > MAX_DOWNLOAD_BYTES:
-        raise ValueError(
-            f"Download exceeds the {MAX_DOWNLOAD_BYTES}-byte safety limit: {url}"
-        )
+        raise ValueError(f"Download exceeds the {MAX_DOWNLOAD_BYTES}-byte safety limit: {url}")
+    if not isinstance(payload, bytes):
+        raise TypeError("download response must contain bytes")
     return payload.decode("utf-8-sig")
 
 
-def _reader(csv_text: str, required: set[str]) -> csv.DictReader:
+def _reader(csv_text: str, required: set[str]) -> csv.DictReader[str]:
     reader = csv.DictReader(io.StringIO(csv_text))
     if reader.fieldnames is None:
         raise ValueError("CSV input is missing a header row")
@@ -142,8 +174,7 @@ def _profile_arrays(csv_text: str) -> _ProfileData:
     )
 
 
-def _capacity_arrays(csv_text: str) -> tuple[NDArray[np.float64],
-                                              NDArray[np.float64]]:
+def _capacity_arrays(csv_text: str) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     reader = _reader(csv_text, {"profile_time_s", "capacity_Ah"})
     times: list[float] = []
     capacities: list[float] = []
@@ -188,8 +219,7 @@ def load_oxford_cell_from_text(
     if trailing_count:
         if trailing_count != 1:
             raise ValueError(
-                "Only the final capacity check may extend beyond the measured "
-                "current profile"
+                "Only the final capacity check may extend beyond the measured current profile"
             )
         if unobserved_tail_s > 1800.0 or abs(profile.current_a[-1]) > 1e-3:
             raise ValueError(
@@ -220,9 +250,7 @@ def load_oxford_cell_from_text(
 def load_oxford_cell(cell_id: str) -> OxfordCellData:
     """Download and convert one supported Oxford cell."""
     if cell_id not in CELL_FILES:
-        raise ValueError(
-            f"Unknown cell_id={cell_id!r}; choose from {', '.join(CELL_FILES)}"
-        )
+        raise ValueError(f"Unknown cell_id={cell_id!r}; choose from {', '.join(CELL_FILES)}")
     profile_file, capacity_file = CELL_FILES[cell_id]
     profile_csv = _download_text(f"{_FILE_ROOT}/{profile_file}")
     capacity_csv = _download_text(f"{_FILE_ROOT}/{capacity_file}")
@@ -242,11 +270,7 @@ def _decorate_efc_figure(figure: Any, results: dict[str, Any], cell_id: str) -> 
         axis.lines[0].set_label(display_model_name)
         last_observed_efc = float(np.max(result.cycles))
         eol = result.eol_cycle(0.8)
-        projection_end = (
-            max(last_observed_efc, eol)
-            if eol is not None
-            else last_observed_efc * 3.0
-        )
+        projection_end = max(last_observed_efc, eol) if eol is not None else last_observed_efc * 3.0
         if projection_end > last_observed_efc:
             projection_efc = np.linspace(last_observed_efc, projection_end, 300)
             projected_capacity = np.asarray(
@@ -298,44 +322,55 @@ def run_analysis(
         validation_fraction=validation_fraction,
     )
 
-    print(f"Source: {OXFORD_RECORD_URL}")
-    print(f"DOI: {OXFORD_DOI}")
-    print(f"Data license: {OXFORD_LICENSE}")
-    print(
-        f"{cell.cell_id}: {cell.efc.size} capacity checks, "
-        f"{cell.profile_rows} measured-profile rows "
-        f"({cell.canonical_profile_rows} canonical)"
+    sys.stdout.write(str(f"Source: {OXFORD_RECORD_URL}") + "\n")
+    sys.stdout.write(str(f"DOI: {OXFORD_DOI}") + "\n")
+    sys.stdout.write(str(f"Data license: {OXFORD_LICENSE}") + "\n")
+    sys.stdout.write(
+        str(
+            f"{cell.cell_id}: {cell.efc.size} capacity checks, "
+            f"{cell.profile_rows} measured-profile rows "
+            f"({cell.canonical_profile_rows} canonical)"
+        )
+        + "\n"
     )
-    print(
-        "Profile diagnostics: "
-        f"non-increasing transitions={cell.non_increasing_transitions}, "
-        f"duplicate samples={cell.duplicate_samples}, "
-        f"unobserved near-zero-current tail={cell.unobserved_tail_s:.1f} s"
+    sys.stdout.write(
+        str(
+            "Profile diagnostics: "
+            f"non-increasing transitions={cell.non_increasing_transitions}, "
+            f"duplicate samples={cell.duplicate_samples}, "
+            f"unobserved near-zero-current tail={cell.unobserved_tail_s:.1f} s"
+        )
+        + "\n"
     )
-    print(f"Final measured discharge EFC: {cell.efc[-1]:.2f}")
-    print(f"Final normalized capacity: {cell.normalized_capacity[-1]:.4f}")
+    sys.stdout.write(str(f"Final measured discharge EFC: {cell.efc[-1]:.2f}") + "\n")
+    sys.stdout.write(str(f"Final normalized capacity: {cell.normalized_capacity[-1]:.4f}") + "\n")
     validation_score = selection.validation_score
-    print(
-        "Chronological holdout: "
-        f"training checks={validation_score.train_size}, "
-        f"late validation checks={validation_score.validation_size}, "
-        f"split={validation_score.split_cycle:.2f} measured discharge EFC"
+    sys.stdout.write(
+        str(
+            "Chronological holdout: "
+            f"training checks={validation_score.train_size}, "
+            f"late validation checks={validation_score.validation_size}, "
+            f"split={validation_score.split_cycle:.2f} measured discharge EFC"
+        )
+        + "\n"
     )
     for name, score in selection.scores.items():
-        print(
-            f"{name:11s} holdout RMSE={score.rmse:.6f} "
-            f"R^2={score.r_squared:.4f}"
+        sys.stdout.write(
+            str(f"{name:11s} holdout RMSE={score.rmse:.6f} R^2={score.r_squared:.4f}") + "\n"
         )
-    print(f"Selected model: {selection.model_name}")
+    sys.stdout.write(str(f"Selected model: {selection.model_name}") + "\n")
 
     eol = selection.fit.eol_cycle(0.8)
     if eol is None:
-        print("80% EOL is outside the supported three-times-observed EFC horizon")
+        sys.stdout.write("80% EOL is outside the supported three-times-observed EFC horizon" + "\n")
     else:
-        print(f"Bounded 80% EOL: {eol:.2f} measured discharge EFC")
-        print(
-            "Point-estimate RUL at the final observation: "
-            f"{max(0.0, eol - cell.efc[-1]):.2f} measured discharge EFC"
+        sys.stdout.write(str(f"Bounded 80% EOL: {eol:.2f} measured discharge EFC") + "\n")
+        sys.stdout.write(
+            str(
+                "Point-estimate RUL at the final observation: "
+                f"{max(0.0, eol - cell.efc[-1]):.2f} measured discharge EFC"
+            )
+            + "\n"
         )
 
     if bootstrap_samples:
@@ -347,23 +382,32 @@ def run_analysis(
             samples=bootstrap_samples,
             random_state=42,
         )
-        print(
-            "Bootstrap diagnostics: "
-            f"requested={interval.requested_samples}, "
-            f"successful={interval.successful_samples}, "
-            f"censored={interval.censored_samples}, "
-            f"failed={interval.failed_samples}"
+        sys.stdout.write(
+            str(
+                "Bootstrap diagnostics: "
+                f"requested={interval.requested_samples}, "
+                f"successful={interval.successful_samples}, "
+                f"censored={interval.censored_samples}, "
+                f"failed={interval.failed_samples}"
+            )
+            + "\n"
         )
         if interval.eol_lower is None:
-            print("Bootstrap EOL/RUL bounds unavailable")
+            sys.stdout.write("Bootstrap EOL/RUL bounds unavailable" + "\n")
         else:
-            print(
-                f"95% EOL interval: {interval.eol_lower:.2f}-"
-                f"{interval.eol_upper:.2f} measured discharge EFC"
+            sys.stdout.write(
+                str(
+                    f"95% EOL interval: {interval.eol_lower:.2f}-"
+                    f"{interval.eol_upper:.2f} measured discharge EFC"
+                )
+                + "\n"
             )
-            print(
-                f"95% RUL interval: {interval.rul_lower:.2f}-"
-                f"{interval.rul_upper:.2f} measured discharge EFC"
+            sys.stdout.write(
+                str(
+                    f"95% RUL interval: {interval.rul_lower:.2f}-"
+                    f"{interval.rul_upper:.2f} measured discharge EFC"
+                )
+                + "\n"
             )
 
     if output is not None:
@@ -371,13 +415,11 @@ def run_analysis(
         figure = viz.model_comparison(results)
         _decorate_efc_figure(figure, results, cell.cell_id)
         figure.savefig(output, dpi=180, bbox_inches="tight")
-        print(f"Saved figure: {output}")
+        sys.stdout.write(str(f"Saved figure: {output}") + "\n")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Run bcla on an official Oxford grid-battery cell"
-    )
+    parser = argparse.ArgumentParser(description="Run bcla on an official Oxford grid-battery cell")
     parser.add_argument("--cell", choices=tuple(CELL_FILES), default="BMR_cell1")
     parser.add_argument("--validation-fraction", type=float, default=0.2)
     parser.add_argument(

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "projects": [
+    ".[dev]"
+  ],
+  "requirements": [],
+  "python_paths": [],
+  "test_targets": [
+    "tests",
+    ".github/security/test_contracts.py"
+  ],
+  "coverage_sources": [
+    "bcla",
+    "scripts",
+    ".github/security"
+  ],
+  "coverage_kind": "numerical-core",
+  "numerical_core_sources": [
+    "bcla"
+  ],
+  "browser_project_directories": []
+}

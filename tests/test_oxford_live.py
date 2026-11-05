@@ -6,7 +6,6 @@ import pytest
 
 from examples import oxford_energy_trading as oxford
 
-
 pytestmark = pytest.mark.skipif(
     os.environ.get("BCLA_RUN_OXFORD_LIVE") != "1",
     reason="set BCLA_RUN_OXFORD_LIVE=1 to download official Oxford data",
@@ -24,7 +23,9 @@ EXPECTED = {
 
 
 @pytest.mark.parametrize(("cell_id", "expected"), EXPECTED.items())
-def test_official_oxford_files_reproduce_audited_efc(cell_id, expected):
+def test_official_oxford_files_reproduce_audited_efc(
+    cell_id: str, expected: tuple[float, float]
+) -> None:
     expected_efc, expected_retention = expected
 
     cell = oxford.load_oxford_cell(cell_id)

@@ -1,3 +1,4 @@
+# Version updates wait seven days; GitHub exempts security updates from cooldown.
 version: 2
 updates:
 - package-ecosystem: github-actions
@@ -5,8 +6,34 @@ updates:
   schedule:
     interval: weekly
   open-pull-requests-limit: 5
+  cooldown:
+    default-days: 7
 - package-ecosystem: pip
   directory: /
   schedule:
     interval: weekly
   open-pull-requests-limit: 5
+  cooldown:
+    default-days: 7
+- package-ecosystem: pip
+  directory: /.github/security
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 5
+  cooldown:
+    default-days: 7
+- package-ecosystem: npm
+  directory: /
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 5
+  cooldown:
+    default-days: 7
+  groups:
+    development-tooling:
+      dependency-type: development
+      patterns:
+      - '*'
+      update-types:
+      - minor
+      - patch

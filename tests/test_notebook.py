@@ -1,15 +1,15 @@
 """Notebook smoke checks for the demo artifact."""
 
+import ast
 import json
 from pathlib import Path
-import ast
 
 
 def _demo_notebook_path() -> Path:
     return Path("notebooks") / "demo.ipynb"
 
 
-def test_notebook_is_valid_json():
+def test_notebook_is_valid_json() -> None:
     path = _demo_notebook_path()
     raw = path.read_text(encoding="utf-8")
     payload = json.loads(raw)
@@ -19,13 +19,12 @@ def test_notebook_is_valid_json():
     assert "cells" in payload
 
 
-def test_notebook_cells_compile_and_no_obsolete_install_instruction():
+def test_notebook_cells_compile_and_no_obsolete_install_instruction() -> None:
     path = _demo_notebook_path()
     payload = json.loads(path.read_text(encoding="utf-8"))
 
     code_cells = [
-        "".join(cell["source"]) for cell in payload["cells"]
-        if cell.get("cell_type") == "code"
+        "".join(cell["source"]) for cell in payload["cells"] if cell.get("cell_type") == "code"
     ]
 
     full_source = "\n".join(code_cells)
@@ -35,7 +34,7 @@ def test_notebook_cells_compile_and_no_obsolete_install_instruction():
         ast.parse(source)
 
 
-def test_notebook_mentions_colab_bootstrap_and_demo_constraints():
+def test_notebook_mentions_colab_bootstrap_and_demo_constraints() -> None:
     path = _demo_notebook_path()
     payload = json.loads(path.read_text(encoding="utf-8"))
 
