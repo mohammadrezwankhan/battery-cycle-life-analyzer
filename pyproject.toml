@@ -53,3 +53,34 @@ bcla = "bcla.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["bcla*"]
+
+[dependency-groups]
+dev = ["ruff==0.17.3", "mypy==2.4.1", "pytest==9.2.0", "pytest-cov==7.1.0", "hypothesis==6.170.14", "scipy-stubs==1.17.0.2"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+
+[tool.ruff.per-file-target-version]
+# Isolated CI scanners execute on Python 3.12; application support stays unchanged.
+".github/security/*.py" = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "S", "A", "C4", "DTZ", "T20", "SIM", "RET", "ARG", "PTH", "PERF", "RUF"]
+# These Greek parameter names are part of the public fitted-model API.
+allowed-confusables = ["α", "β"]
+
+[tool.ruff.lint.pyupgrade]
+# Runtime annotation inspection must continue to work on supported Python 3.9.
+keep-runtime-typing = true
+
+[tool.mypy]
+strict = true
+files = ["bcla", "tests", "scripts"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint.per-file-ignores]
+# Pytest rewrites assertions into rich test failures; these are not production guards.
+"tests/test_*.py" = ["S101"]

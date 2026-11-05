@@ -8,14 +8,14 @@ import pytest
 from bcla import core
 from bcla.datasets import (
     LongFormCycleData,
-    load_duty_cycle_history,
     load_cycle_data,
     load_cycle_data_long_form,
+    load_duty_cycle_history,
     synthetic_lfp,
 )
 
 
-def test_load_cycle_data_reads_csv_and_normalizes(tmp_path: Path):
+def test_load_cycle_data_reads_csv_and_normalizes(tmp_path: Path) -> None:
     csv_path = tmp_path / "cycles.csv"
     csv_path.write_text("cycle,capacity\n1,1.00\n2,0.98\n3,0.95\n")
 
@@ -25,7 +25,7 @@ def test_load_cycle_data_reads_csv_and_normalizes(tmp_path: Path):
     assert np.allclose(capacity, np.array([1.0, 0.98, 0.95]))
 
 
-def test_load_cycle_data_works_without_normalization(tmp_path: Path):
+def test_load_cycle_data_works_without_normalization(tmp_path: Path) -> None:
     csv_path = tmp_path / "cycles.tsv"
     csv_path.write_text("t\tq\n1\t1.10\n2\t1.00\n3\t0.85\n")
 
@@ -40,7 +40,7 @@ def test_load_cycle_data_works_without_normalization(tmp_path: Path):
     assert np.allclose(capacity, np.array([1.10, 1.00, 0.85]))
 
 
-def test_load_cycle_data_raises_for_missing_columns(tmp_path: Path):
+def test_load_cycle_data_raises_for_missing_columns(tmp_path: Path) -> None:
     csv_path = tmp_path / "bad.csv"
     csv_path.write_text("a,b\n1,2\n")
 
@@ -48,11 +48,9 @@ def test_load_cycle_data_raises_for_missing_columns(tmp_path: Path):
         load_cycle_data(csv_path)
 
 
-def test_load_cycle_data_reads_utf8_bom_header(tmp_path: Path):
+def test_load_cycle_data_reads_utf8_bom_header(tmp_path: Path) -> None:
     csv_path = tmp_path / "excel.csv"
-    csv_path.write_bytes(
-        b"\xef\xbb\xbfcycle,capacity\n1,1.00\n2,0.98\n3,0.95\n"
-    )
+    csv_path.write_bytes(b"\xef\xbb\xbfcycle,capacity\n1,1.00\n2,0.98\n3,0.95\n")
 
     cycles, capacity = load_cycle_data(csv_path)
 
@@ -60,7 +58,7 @@ def test_load_cycle_data_reads_utf8_bom_header(tmp_path: Path):
     assert np.allclose(capacity, np.array([1.0, 0.98, 0.95]))
 
 
-def test_load_cycle_data_accepts_escaped_tab_separator(tmp_path: Path):
+def test_load_cycle_data_accepts_escaped_tab_separator(tmp_path: Path) -> None:
     csv_path = tmp_path / "cycles.txt"
     csv_path.write_text("cycle\tcapacity\n1\t1.00\n2\t0.95\n")
 
@@ -71,19 +69,15 @@ def test_load_cycle_data_accepts_escaped_tab_separator(tmp_path: Path):
 
 
 @pytest.mark.parametrize("bad_value", ["nan", "inf", "-inf"])
-def test_load_cycle_data_rejects_non_finite_values(
-    tmp_path: Path, bad_value: str
-):
+def test_load_cycle_data_rejects_non_finite_values(tmp_path: Path, bad_value: str) -> None:
     csv_path = tmp_path / "bad.csv"
-    csv_path.write_text(
-        f"cycle,capacity\n1,1.00\n2,{bad_value}\n"
-    )
+    csv_path.write_text(f"cycle,capacity\n1,1.00\n2,{bad_value}\n")
 
     with pytest.raises(ValueError, match="Non-finite value in row 3"):
         load_cycle_data(csv_path)
 
 
-def test_load_cycle_data_rejects_multi_character_separator(tmp_path: Path):
+def test_load_cycle_data_rejects_multi_character_separator(tmp_path: Path) -> None:
     csv_path = tmp_path / "cycles.csv"
     csv_path.write_text("cycle,capacity\n1,1.00\n")
 
@@ -91,7 +85,7 @@ def test_load_cycle_data_rejects_multi_character_separator(tmp_path: Path):
         load_cycle_data(csv_path, sep="||")
 
 
-def test_load_cycle_data_long_form_multi_cell_with_metadata_and_envelope(tmp_path: Path):
+def test_load_cycle_data_long_form_multi_cell_with_metadata_and_envelope(tmp_path: Path) -> None:
     csv_path = tmp_path / "long_form.csv"
     csv_path.write_text(
         "cell_id,cycle,capacity,chemistry,temperature_c,c_rate,cycles_per_day,"
@@ -123,13 +117,12 @@ def test_load_cycle_data_long_form_multi_cell_with_metadata_and_envelope(tmp_pat
     assert envelope_b["cycle_range"] == (1.0, 3.0)
     assert envelope_b["cycles_per_day"] == (2.0, 2.0)
     assert envelope_b["depth_of_discharge"] == (0.9, 0.9)
-    assert all(row["duty_cycle_profile"] in {"continuous", "partial_cycles"}
-               for row in result.rows)
+    assert all(row["duty_cycle_profile"] in {"continuous", "partial_cycles"} for row in result.rows)
     assert all(row["timestamp_iso"] is not None for row in result.rows)
     assert result.rows[0]["timestamp_iso"] == "2026-07-01T00:00:00Z"
 
 
-def test_load_cycle_data_long_form_marks_optional_fields_explicitly(tmp_path: Path):
+def test_load_cycle_data_long_form_marks_optional_fields_explicitly(tmp_path: Path) -> None:
     csv_path = tmp_path / "minimal_long_form.csv"
     csv_path.write_text("cell_id,cycle,capacity\nC01,1,1.00\nC01,2,0.95\n")
 
@@ -146,14 +139,10 @@ def test_load_cycle_data_long_form_marks_optional_fields_explicitly(tmp_path: Pa
     assert all(row["duty_cycle_profile"] is None for row in result.rows)
 
 
-def test_load_cycle_data_long_form_with_history_csv(tmp_path: Path):
+def test_load_cycle_data_long_form_with_history_csv(tmp_path: Path) -> None:
     long_form = tmp_path / "long_form.csv"
     long_form.write_text(
-        "cell_id,cycle,capacity,chemistry\n"
-        "A,1,1.00,LFP\n"
-        "A,2,0.99,LFP\n"
-        "B,1,1.00,NMC\n"
-        "B,2,0.98,NMC\n"
+        "cell_id,cycle,capacity,chemistry\nA,1,1.00,LFP\nA,2,0.99,LFP\nB,1,1.00,NMC\nB,2,0.98,NMC\n"
     )
 
     history = tmp_path / "history.csv"
@@ -178,7 +167,7 @@ def test_load_cycle_data_long_form_with_history_csv(tmp_path: Path):
     assert result.duty_cycle_history[0]["interval_seconds"] == 43200.0
 
 
-def test_load_cycle_data_long_form_rejects_history_unknown_cell(tmp_path: Path):
+def test_load_cycle_data_long_form_rejects_history_unknown_cell(tmp_path: Path) -> None:
     long_form = tmp_path / "long_form.csv"
     long_form.write_text("cell_id,cycle,capacity\nA,1,1.00\n")
 
@@ -192,7 +181,7 @@ def test_load_cycle_data_long_form_rejects_history_unknown_cell(tmp_path: Path):
         load_cycle_data_long_form(long_form, history_csv_path=history)
 
 
-def test_load_duty_cycle_history_rejects_invalid_interval(tmp_path: Path):
+def test_load_duty_cycle_history_rejects_invalid_interval(tmp_path: Path) -> None:
     history = tmp_path / "history.csv"
     history.write_text(
         "cell_id,experiment_id,interval_start,interval_end\n"
@@ -206,24 +195,19 @@ def test_load_duty_cycle_history_rejects_invalid_interval(tmp_path: Path):
         )
 
 
-@pytest.mark.parametrize(
-    "bad_value", ["nan", "inf", "-inf"]
-)
+@pytest.mark.parametrize("bad_value", ["nan", "inf", "-inf"])
 def test_load_cycle_data_long_form_rejects_invalid_optional_numeric(
     tmp_path: Path,
     bad_value: str,
-):
+) -> None:
     csv_path = tmp_path / "bad_optional.csv"
-    csv_path.write_text(
-        "cell_id,cycle,capacity,temperature_c,c_rate\n"
-        f"C1,1,1.00,{bad_value},1.0\n"
-    )
+    csv_path.write_text(f"cell_id,cycle,capacity,temperature_c,c_rate\nC1,1,1.00,{bad_value},1.0\n")
 
     with pytest.raises(ValueError, match="Non-finite optional value in row 2"):
         load_cycle_data_long_form(csv_path)
 
 
-def test_load_cycle_data_long_form_rejects_missing_cell_id(tmp_path: Path):
+def test_load_cycle_data_long_form_rejects_missing_cell_id(tmp_path: Path) -> None:
     csv_path = tmp_path / "missing_cell.csv"
     csv_path.write_text("cell_id,cycle,capacity\n,1,1.00\n")
 
@@ -231,7 +215,7 @@ def test_load_cycle_data_long_form_rejects_missing_cell_id(tmp_path: Path):
         load_cycle_data_long_form(csv_path)
 
 
-def test_load_cycle_data_long_form_rejects_negative_cycle(tmp_path: Path):
+def test_load_cycle_data_long_form_rejects_negative_cycle(tmp_path: Path) -> None:
     csv_path = tmp_path / "bad_cycle.csv"
     csv_path.write_text("cell_id,cycle,capacity\nC,-1,1.00\n")
 
@@ -239,7 +223,7 @@ def test_load_cycle_data_long_form_rejects_negative_cycle(tmp_path: Path):
         load_cycle_data_long_form(csv_path)
 
 
-def test_load_cycle_data_long_form_rejects_negative_optional(tmp_path: Path):
+def test_load_cycle_data_long_form_rejects_negative_optional(tmp_path: Path) -> None:
     csv_path = tmp_path / "bad_optional.csv"
     csv_path.write_text("cell_id,cycle,capacity,c_rate\nC,1,1.00,-0.5\n")
 
@@ -247,11 +231,9 @@ def test_load_cycle_data_long_form_rejects_negative_optional(tmp_path: Path):
         load_cycle_data_long_form(csv_path)
 
 
-def test_load_cycle_data_long_form_rejects_depth_of_discharge_over_one(tmp_path: Path):
+def test_load_cycle_data_long_form_rejects_depth_of_discharge_over_one(tmp_path: Path) -> None:
     csv_path = tmp_path / "bad_dod.csv"
-    csv_path.write_text(
-        "cell_id,cycle,capacity,depth_of_discharge\nC,1,1.00,1.5\n"
-    )
+    csv_path.write_text("cell_id,cycle,capacity,depth_of_discharge\nC,1,1.00,1.5\n")
 
     with pytest.raises(
         ValueError,
@@ -260,19 +242,16 @@ def test_load_cycle_data_long_form_rejects_depth_of_discharge_over_one(tmp_path:
         load_cycle_data_long_form(csv_path)
 
 
-def test_load_cycle_data_long_form_rejects_invalid_timestamp(tmp_path: Path):
+def test_load_cycle_data_long_form_rejects_invalid_timestamp(tmp_path: Path) -> None:
     bad = "2026/07/01 00:00"
     csv_path = tmp_path / "bad_timestamp.csv"
-    csv_path.write_text(
-        "cell_id,cycle,capacity,timestamp_iso\nC,1,1.00,"
-        f"{bad}\n"
-    )
+    csv_path.write_text(f"cell_id,cycle,capacity,timestamp_iso\nC,1,1.00,{bad}\n")
 
     with pytest.raises(ValueError, match="Could not parse optional timestamp field in row 2"):
         load_cycle_data_long_form(csv_path)
 
 
-def test_synthetic_lfp_is_gradual_without_premature_clipping():
+def test_synthetic_lfp_is_gradual_without_premature_clipping() -> None:
     cycles, capacity = synthetic_lfp(cycles=1500, seed=42, noise_std=0.0)
 
     assert cycles[0] == 1.0
@@ -284,7 +263,7 @@ def test_synthetic_lfp_is_gradual_without_premature_clipping():
     assert capacity.min() > 0.84
 
 
-def test_synthetic_lfp_best_fit_is_good_and_produces_reasonable_eol():
+def test_synthetic_lfp_best_fit_is_good_and_produces_reasonable_eol() -> None:
     cycles, capacity = synthetic_lfp(cycles=1500, seed=42, noise_std=0.0)
     results = core.fit_all_models(cycles, capacity)
     _, best = core.best_model(results, criterion="rmse")

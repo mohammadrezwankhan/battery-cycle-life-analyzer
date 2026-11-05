@@ -22,8 +22,12 @@ jobs:
       matrix:
         python-version: ['3.9', '3.12']
     steps:
+      - name: Audit runner network activity
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
       # No checkout: imports must come from the published wheel.
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install exact published version in a fresh environment

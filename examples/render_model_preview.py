@@ -1,13 +1,14 @@
 """Regenerate the README/Pages preview from the documented synthetic NMC data."""
 
+import sys
 from pathlib import Path
 
 import matplotlib
 
 matplotlib.use("Agg")
-from matplotlib import pyplot as plt  # noqa: E402
+from matplotlib import pyplot as plt
 
-from bcla import core, datasets, viz  # noqa: E402
+from bcla import core, datasets, viz
 
 
 def main() -> None:
@@ -19,7 +20,7 @@ def main() -> None:
         figure.savefig(output, dpi=150, bbox_inches="tight")
     finally:
         plt.close(figure)
-    print(f"Preview written to {output}")
+    sys.stdout.write(str(f"Preview written to {output}") + "\n")
 
 
 if __name__ == "__main__":

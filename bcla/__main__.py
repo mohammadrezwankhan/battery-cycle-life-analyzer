@@ -1,7 +1,9 @@
 """
 CLI entry point: ``python -m bcla --help``
 """
+
 import argparse
+import sys
 
 
 def main() -> None:
@@ -9,10 +11,13 @@ def main() -> None:
         prog="python -m bcla",
         description="Battery Cycle-Life Analyzer - quick demo",
     )
-    parser.add_argument("--cycles", type=int, default=1500,
-                        help="Number of synthetic cycles")
-    parser.add_argument("--model", choices=["linear", "power_law", "logarithmic", "all"],
-                        default="all", help="Degradation model to fit")
+    parser.add_argument("--cycles", type=int, default=1500, help="Number of synthetic cycles")
+    parser.add_argument(
+        "--model",
+        choices=["linear", "power_law", "logarithmic", "all"],
+        default="all",
+        help="Degradation model to fit",
+    )
     parser.add_argument(
         "--selection",
         choices=["validation", "in-sample"],
@@ -31,26 +36,33 @@ def main() -> None:
         default=0,
         help="Residual-bootstrap replicates for EOL/RUL intervals; 0 disables",
     )
-    parser.add_argument("--csv", type=str,
-                        help="Path to a CSV/TSV file with cycle + capacity columns")
-    parser.add_argument("--cycle-col", default="cycle",
-                        help="Column name for cycle data (default: cycle)")
-    parser.add_argument("--capacity-col", default="capacity",
-                        help="Column name for capacity data (default: capacity)")
+    parser.add_argument(
+        "--csv", type=str, help="Path to a CSV/TSV file with cycle + capacity columns"
+    )
+    parser.add_argument(
+        "--cycle-col", default="cycle", help="Column name for cycle data (default: cycle)"
+    )
+    parser.add_argument(
+        "--capacity-col",
+        default="capacity",
+        help="Column name for capacity data (default: capacity)",
+    )
     parser.add_argument(
         "--sep",
         default=None,
         help="Separator character; defaults to tab for .tsv/.tab and comma otherwise",
     )
-    parser.add_argument("--no-normalize", action="store_true",
-                        help="Disable normalization when loading CSV capacity")
+    parser.add_argument(
+        "--no-normalize",
+        action="store_true",
+        help="Disable normalization when loading CSV capacity",
+    )
     args = parser.parse_args()
     if args.bootstrap_samples != 0 and args.bootstrap_samples < 20:
         parser.error("--bootstrap-samples must be 0 or at least 20")
     if not 0.0 < args.validation_fraction < 1.0:
         parser.error("--validation-fraction must be between 0 and 1")
 
-    from .datasets import synthetic_lfp, load_cycle_data
     from .core import (
         best_model,
         bootstrap_life_projection,
@@ -58,6 +70,7 @@ def main() -> None:
         fit_capacity_fade,
         select_model_by_validation,
     )
+    from .datasets import load_cycle_data, synthetic_lfp
 
     if args.csv:
         x, y = load_cycle_data(
@@ -84,19 +97,22 @@ def main() -> None:
             score = selection.validation_score
         results = fit_all_models(x, y)
         for r in results.values():
-            print(r.summary(ascii_only=True) + "\n")
+            sys.stdout.write(str(r.summary(ascii_only=True) + "\n") + "\n")
         if args.selection == "validation":
-            print(
-                f"Selected model: {name} "
-                f"(held-out RMSE={score.rmse:.5f}, "
-                f"validation points={score.validation_size})"
+            sys.stdout.write(
+                str(
+                    f"Selected model: {name} "
+                    f"(held-out RMSE={score.rmse:.5f}, "
+                    f"validation points={score.validation_size})"
+                )
+                + "\n"
             )
         else:
             name, best = best_model(results)
-            print(f"Selected model: {name} (lowest in-sample RMSE)")
+            sys.stdout.write(str(f"Selected model: {name} (lowest in-sample RMSE)") + "\n")
     else:
         best = fit_capacity_fade(x, y, model=args.model)
-        print(best.summary(ascii_only=True))
+        sys.stdout.write(str(best.summary(ascii_only=True)) + "\n")
 
     if args.bootstrap_samples:
         try:
@@ -108,39 +124,54 @@ def main() -> None:
         except ValueError as exc:
             parser.error(f"cannot compute bootstrap interval: {exc}")
         confidence_pct = interval.confidence * 100.0
-        print(
-            "Bootstrap replicates: "
-            f"successful={interval.successful_samples}, "
-            f"censored={interval.censored_samples}, "
-            f"failed={interval.failed_samples}, "
-            f"requested={interval.requested_samples}"
+        sys.stdout.write(
+            str(
+                "Bootstrap replicates: "
+                f"successful={interval.successful_samples}, "
+                f"censored={interval.censored_samples}, "
+                f"failed={interval.failed_samples}, "
+                f"requested={interval.requested_samples}"
+            )
+            + "\n"
         )
         if interval.eol_lower is None:
-            print(
-                f"{confidence_pct:.0f}% EOL/RUL interval unavailable: "
-                "bounds withheld because at least one replicate was censored "
-                "or failed"
+            sys.stdout.write(
+                str(
+                    f"{confidence_pct:.0f}% EOL/RUL interval unavailable: "
+                    "bounds withheld because at least one replicate was censored "
+                    "or failed"
+                )
+                + "\n"
             )
         else:
-            print(
-                f"{confidence_pct:.0f}% EOL interval: "
-                f"{interval.eol_lower:.0f}-{interval.eol_upper:.0f} cycles"
+            sys.stdout.write(
+                str(
+                    f"{confidence_pct:.0f}% EOL interval: "
+                    f"{interval.eol_lower:.0f}-{interval.eol_upper:.0f} cycles"
+                )
+                + "\n"
             )
-            print(
-                f"{confidence_pct:.0f}% RUL interval: "
-                f"{interval.rul_lower:.0f}-{interval.rul_upper:.0f} cycles"
+            sys.stdout.write(
+                str(
+                    f"{confidence_pct:.0f}% RUL interval: "
+                    f"{interval.rul_lower:.0f}-{interval.rul_upper:.0f} cycles"
+                )
+                + "\n"
             )
 
-    from .viz import capacity_fade
     import matplotlib.pyplot as plt
+
+    from .viz import capacity_fade
+
     if args.model == "all":
         from .viz import model_comparison
+
         fig = model_comparison(results)
     else:
         fig, ax = plt.subplots()
         capacity_fade(best, ax=ax)
     fig.savefig("bcla_demo.png", dpi=150, bbox_inches="tight")
-    print("Saved bcla_demo.png")
+    sys.stdout.write("Saved bcla_demo.png" + "\n")
 
 
 if __name__ == "__main__":

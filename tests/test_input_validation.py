@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from numpy.typing import ArrayLike
 
 from bcla.core import arrhenius_acceleration_factor, fit_capacity_fade
 
@@ -18,20 +19,22 @@ from bcla.core import arrhenius_acceleration_factor, fit_capacity_fade
         ([0, 1, 2], [1, np.nan, 0.8], "finite"),
     ],
 )
-def test_fit_rejects_invalid_observation_arrays(cycles, capacity, message):
+def test_fit_rejects_invalid_observation_arrays(
+    cycles: ArrayLike, capacity: ArrayLike, message: str
+) -> None:
     with pytest.raises(ValueError, match=message):
         fit_capacity_fade(cycles, capacity, model="linear")
 
 
 @pytest.mark.parametrize("target", [-1, np.nan, np.inf, -np.inf])
-def test_projection_rejects_invalid_cycle_coordinate(target):
+def test_projection_rejects_invalid_cycle_coordinate(target: float) -> None:
     fitted = fit_capacity_fade([0, 100, 200], [1, 0.95, 0.9], model="linear")
     with pytest.raises(ValueError, match="finite and non-negative"):
         fitted.project(target)
 
 
 @pytest.mark.parametrize("fraction", [0, 1, -0.2, 2, np.nan, np.inf])
-def test_eol_rejects_invalid_fraction(fraction):
+def test_eol_rejects_invalid_fraction(fraction: float) -> None:
     fitted = fit_capacity_fade([0, 100, 200], [1, 0.95, 0.9], model="linear")
     with pytest.raises(ValueError, match="between 0 and 1"):
         fitted.eol_cycle(fraction)
@@ -39,7 +42,7 @@ def test_eol_rejects_invalid_fraction(fraction):
 
 @pytest.mark.parametrize("field", ["temperature_c", "reference_c", "activation_ev"])
 @pytest.mark.parametrize("value", [np.nan, np.inf, -np.inf])
-def test_arrhenius_rejects_non_finite_inputs(field, value):
+def test_arrhenius_rejects_non_finite_inputs(field: str, value: float) -> None:
     arguments = {"temperature_c": 25.0, field: value}
     with pytest.raises(ValueError, match="finite"):
         arrhenius_acceleration_factor(**arguments)
@@ -47,7 +50,7 @@ def test_arrhenius_rejects_non_finite_inputs(field, value):
 
 @pytest.mark.parametrize("field", ["temperature_c", "reference_c"])
 @pytest.mark.parametrize("value", [-273.15, -274.0])
-def test_arrhenius_rejects_non_positive_kelvin_temperature(field, value):
+def test_arrhenius_rejects_non_positive_kelvin_temperature(field: str, value: float) -> None:
     arguments = {"temperature_c": 25.0, field: value}
     with pytest.raises(ValueError, match="above absolute zero"):
         arrhenius_acceleration_factor(**arguments)

@@ -1,8 +1,7 @@
 import os
-from pathlib import Path
 import subprocess
 import sys
-
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -13,14 +12,13 @@ def _strict_cp1252_environment() -> dict[str, str]:
     env["MPLBACKEND"] = "Agg"
     existing_path = env.get("PYTHONPATH")
     env["PYTHONPATH"] = (
-        f"{PROJECT_ROOT}{os.pathsep}{existing_path}"
-        if existing_path
-        else str(PROJECT_ROOT)
+        f"{PROJECT_ROOT}{os.pathsep}{existing_path}" if existing_path else str(PROJECT_ROOT)
     )
     return env
 
 
-def test_cli_help_is_cp1252_safe(tmp_path):
+def test_cli_help_is_cp1252_safe(tmp_path: Path) -> None:
+    # S603: fixed Python executable and explicit argument list; shell stays disabled.
     completed = subprocess.run(
         [sys.executable, "-m", "bcla", "--help"],
         cwd=tmp_path,
@@ -35,7 +33,8 @@ def test_cli_help_is_cp1252_safe(tmp_path):
     assert "Battery Cycle-Life Analyzer" in output
 
 
-def test_power_law_cli_is_cp1252_safe(tmp_path):
+def test_power_law_cli_is_cp1252_safe(tmp_path: Path) -> None:
+    # S603: fixed Python executable and explicit argument list; shell stays disabled.
     completed = subprocess.run(
         [
             sys.executable,
@@ -61,7 +60,8 @@ def test_power_law_cli_is_cp1252_safe(tmp_path):
     assert (tmp_path / "bcla_demo.png").is_file()
 
 
-def test_all_models_cli_uses_temporal_validation_by_default(tmp_path):
+def test_all_models_cli_uses_temporal_validation_by_default(tmp_path: Path) -> None:
+    # S603: fixed Python executable and explicit argument list; shell stays disabled.
     completed = subprocess.run(
         [
             sys.executable,
@@ -87,7 +87,8 @@ def test_all_models_cli_uses_temporal_validation_by_default(tmp_path):
     assert (tmp_path / "bcla_demo.png").is_file()
 
 
-def test_all_models_cli_reports_invalid_validation_before_fit_output(tmp_path):
+def test_all_models_cli_reports_invalid_validation_before_fit_output(tmp_path: Path) -> None:
+    # S603: fixed Python executable and explicit argument list; shell stays disabled.
     completed = subprocess.run(
         [
             sys.executable,
@@ -112,7 +113,8 @@ def test_all_models_cli_reports_invalid_validation_before_fit_output(tmp_path):
     assert "Model          :" not in output
 
 
-def test_cli_reports_all_bootstrap_outcome_counts(tmp_path):
+def test_cli_reports_all_bootstrap_outcome_counts(tmp_path: Path) -> None:
+    # S603: fixed Python executable and explicit argument list; shell stays disabled.
     completed = subprocess.run(
         [
             sys.executable,
@@ -141,8 +143,9 @@ def test_cli_reports_all_bootstrap_outcome_counts(tmp_path):
     assert "requested=20" in output
 
 
-def test_bundled_quickstart_csv_produces_a_result(tmp_path):
-    completed = subprocess.run(
+def test_bundled_quickstart_csv_produces_a_result(tmp_path: Path) -> None:
+    # S603: fixed Python executable and explicit argument list; shell stays disabled.
+    completed = subprocess.run(  # noqa: S603 - fixed interpreter/module arguments, shell=False
         [
             sys.executable,
             "-m",

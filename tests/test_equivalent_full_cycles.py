@@ -2,11 +2,12 @@
 
 import numpy as np
 import pytest
+from numpy.typing import ArrayLike
 
 from bcla.datasets import equivalent_full_cycles
 
 
-def test_equivalent_full_cycles_uses_clipped_trapezoidal_integration():
+def test_equivalent_full_cycles_uses_clipped_trapezoidal_integration() -> None:
     time_s = np.array([0.0, 900.0, 1800.0, 2700.0])
     current_a = np.array([8.0, -8.0, 16.0, 0.0])
 
@@ -15,7 +16,7 @@ def test_equivalent_full_cycles_uses_clipped_trapezoidal_integration():
     assert np.allclose(efc, np.array([0.0, 0.0625, 0.1875, 0.3125]))
 
 
-def test_equivalent_full_cycles_handles_partial_interval_queries():
+def test_equivalent_full_cycles_handles_partial_interval_queries() -> None:
     efc = equivalent_full_cycles(
         [0.0, 900.0],
         [8.0, -8.0],
@@ -26,13 +27,13 @@ def test_equivalent_full_cycles_handles_partial_interval_queries():
     assert np.allclose(efc, np.array([0.0, 0.046875, 0.0625]))
 
 
-def test_equivalent_full_cycles_excludes_charging_current():
+def test_equivalent_full_cycles_excludes_charging_current() -> None:
     efc = equivalent_full_cycles([0.0, 900.0], [-8.0, -4.0], 16.0)
 
     assert np.array_equal(efc, np.zeros(2))
 
 
-def test_equivalent_full_cycles_accepts_scalar_query():
+def test_equivalent_full_cycles_accepts_scalar_query() -> None:
     efc = equivalent_full_cycles(
         [0.0, 900.0],
         [16.0, 16.0],
@@ -61,8 +62,8 @@ def test_equivalent_full_cycles_accepts_scalar_query():
     ],
 )
 def test_equivalent_full_cycles_rejects_invalid_measurements(
-    time_s, current_a, nominal_capacity_ah, match
-):
+    time_s: ArrayLike, current_a: ArrayLike, nominal_capacity_ah: float, match: str
+) -> None:
     with pytest.raises(ValueError, match=match):
         equivalent_full_cycles(time_s, current_a, nominal_capacity_ah)
 
@@ -71,7 +72,7 @@ def test_equivalent_full_cycles_rejects_invalid_measurements(
     "query_time_s",
     [[-1.0], [901.0], [np.nan], [[0.0, 1.0]]],
 )
-def test_equivalent_full_cycles_rejects_invalid_queries(query_time_s):
+def test_equivalent_full_cycles_rejects_invalid_queries(query_time_s: ArrayLike) -> None:
     with pytest.raises(ValueError):
         equivalent_full_cycles(
             [0.0, 900.0],
@@ -81,7 +82,7 @@ def test_equivalent_full_cycles_rejects_invalid_queries(query_time_s):
         )
 
 
-def test_equivalent_full_cycles_allows_empty_query():
+def test_equivalent_full_cycles_allows_empty_query() -> None:
     efc = equivalent_full_cycles(
         [0.0, 900.0],
         [8.0, 0.0],
@@ -92,7 +93,7 @@ def test_equivalent_full_cycles_allows_empty_query():
     assert efc.size == 0
 
 
-def test_equivalent_full_cycles_rejects_numerical_overflow():
+def test_equivalent_full_cycles_rejects_numerical_overflow() -> None:
     with pytest.raises(ValueError, match="non-finite"):
         equivalent_full_cycles(
             [0.0, 1e308],

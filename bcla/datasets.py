@@ -1,12 +1,12 @@
 """
-datasets — Built‑in example cycling data and synthetic generators.
+datasets — Built\u2011in example cycling data and synthetic generators.
 """
 
 from __future__ import annotations
 
 import csv
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -14,12 +14,11 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-def synthetic_lfp(cycles: int = 1500,
-                  seed: int = 42,
-                  noise_std: float = 0.005) -> tuple[NDArray[np.float64],
-                                                     NDArray[np.float64]]:
+def synthetic_lfp(
+    cycles: int = 1500, seed: int = 42, noise_std: float = 0.005
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """
-    Synthetic capacity‑fade data resembling an LFP cell at 1C / 25 °C.
+    Synthetic capacity\u2011fade data resembling an LFP cell at 1C / 25 °C.
 
     Parameters
     ----------
@@ -34,18 +33,18 @@ def synthetic_lfp(cycles: int = 1500,
     rng = np.random.default_rng(seed)
     x = np.arange(1, cycles + 1, dtype=float)
 
-    # Two‑phase degradation: mild power‑law fade + soft knee + late acceleration.
+    # Two\u2011phase degradation: mild power\u2011law fade + soft knee + late acceleration.
     q0 = 1.0
     alpha = 0.0006
     beta = 0.65
-    capacity = q0 - alpha * x ** beta
+    capacity = q0 - alpha * x**beta
 
-    # Add a knee plateau around cycle 800–1000
+    # Add a knee plateau around cycle 800\u20131000
     knee_onset = 800
     knee_mag = 0.03 * (1 + np.tanh((x - knee_onset - 100) / 50)) / 2
     capacity -= knee_mag
 
-    # Non‑linear end‑of‑life acceleration
+    # Non\u2011linear end\u2011of\u2011life acceleration
     eol_accel = 0.00005 * np.maximum(0, x - 1100) ** 1.1
     capacity -= eol_accel
 
@@ -54,19 +53,18 @@ def synthetic_lfp(cycles: int = 1500,
     return x, capacity
 
 
-def synthetic_nmc(cycles: int = 1000,
-                  seed: int = 7,
-                  noise_std: float = 0.004) -> tuple[NDArray[np.float64],
-                                                     NDArray[np.float64]]:
+def synthetic_nmc(
+    cycles: int = 1000, seed: int = 7, noise_std: float = 0.004
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """
-    Synthetic capacity‑fade resembling an NMC cell at 1C / 25 °C.
+    Synthetic capacity\u2011fade resembling an NMC cell at 1C / 25 °C.
 
     NMC degrades faster than LFP with a more linear trajectory.
     """
     rng = np.random.default_rng(seed)
     x = np.arange(1, cycles + 1, dtype=float)
     q0 = 1.0
-    k = 0.00018  # steeper linear fade vs LFP power‑law
+    k = 0.00018  # steeper linear fade vs LFP power\u2011law
     capacity = q0 - k * x - 0.008 * (x / 1000) ** 2
     capacity += rng.normal(0, noise_std, size=cycles)
     capacity = np.clip(capacity, 0.7, 1.01)
@@ -164,9 +162,7 @@ def equivalent_full_cycles(
     try:
         nominal_capacity = float(nominal_capacity_ah)
     except (TypeError, ValueError):
-        raise ValueError(
-            "nominal_capacity_ah must be a positive finite value"
-        ) from None
+        raise ValueError("nominal_capacity_ah must be a positive finite value") from None
     if not np.isfinite(nominal_capacity) or nominal_capacity <= 0.0:
         raise ValueError("nominal_capacity_ah must be a positive finite value")
 
@@ -187,15 +183,8 @@ def equivalent_full_cycles(
 
     discharge_current = np.maximum(current, 0.0)
     with np.errstate(over="ignore", invalid="ignore"):
-        interval_ah = (
-            0.5
-            * (discharge_current[:-1] + discharge_current[1:])
-            * elapsed_s
-            / 3600.0
-        )
-        cumulative_efc = np.concatenate(
-            ([0.0], np.cumsum(interval_ah) / nominal_capacity)
-        )
+        interval_ah = 0.5 * (discharge_current[:-1] + discharge_current[1:]) * elapsed_s / 3600.0
+        cumulative_efc = np.concatenate(([0.0], np.cumsum(interval_ah) / nominal_capacity))
     if not np.all(np.isfinite(cumulative_efc)):
         raise ValueError("EFC integration produced non-finite values")
 
@@ -206,23 +195,17 @@ def equivalent_full_cycles(
         idx = interval_index[partial]
         partial_s = query[partial] - time[idx]
         fraction = partial_s / (time[idx + 1] - time[idx])
-        query_current = (
-            discharge_current[idx]
-            + fraction * (discharge_current[idx + 1] - discharge_current[idx])
+        query_current = discharge_current[idx] + fraction * (
+            discharge_current[idx + 1] - discharge_current[idx]
         )
-        partial_ah = (
-            0.5
-            * (discharge_current[idx] + query_current)
-            * partial_s
-            / 3600.0
-        )
+        partial_ah = 0.5 * (discharge_current[idx] + query_current) * partial_s / 3600.0
         result[partial] += partial_ah / nominal_capacity
     return result
 
 
 @dataclass(frozen=True)
 class LongFormCycleData:
-    """Loaded long‑form cycle dataset with provenance fields preserved."""
+    """Loaded long\u2011form cycle dataset with provenance fields preserved."""
 
     rows: list[dict[str, Any]]
     schema_version: str
@@ -250,9 +233,7 @@ class LongFormCycleData:
         ``for_cell(cell_id)``.
         """
         if len(self.cell_ids) != 1:
-            raise ValueError(
-                "Long-form payload contains multiple cells; use for_cell(cell_id)."
-            )
+            raise ValueError("Long-form payload contains multiple cells; use for_cell(cell_id).")
         cycles, _ = self.for_cell(self.cell_ids[0])
         return cycles
 
@@ -265,14 +246,11 @@ class LongFormCycleData:
         ``for_cell(cell_id)``.
         """
         if len(self.cell_ids) != 1:
-            raise ValueError(
-                "Long-form payload contains multiple cells; use for_cell(cell_id)."
-            )
+            raise ValueError("Long-form payload contains multiple cells; use for_cell(cell_id).")
         _, capacity = self.for_cell(self.cell_ids[0])
         return capacity
 
-    def for_cell(self, cell_id: str) -> tuple[NDArray[np.float64],
-                                             NDArray[np.float64]]:
+    def for_cell(self, cell_id: str) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         """Return cycle and capacity vectors for one `cell_id`."""
         matching = [row for row in self.rows if row["cell_id"] == cell_id]
         if not matching:
@@ -287,9 +265,7 @@ class LongFormCycleData:
 def _parse_required_string(row_num: int, field: str, value: Any) -> str:
     text = str(value).strip() if value is not None else ""
     if not text:
-        raise ValueError(
-            f"Missing required field in row {row_num}: {field}={value!r}"
-        )
+        raise ValueError(f"Missing required field in row {row_num}: {field}={value!r}")
     return text
 
 
@@ -303,19 +279,13 @@ def _parse_required_float(
     try:
         parsed = float(value)
     except (TypeError, ValueError):
-        raise ValueError(
-            f"Could not parse row {row_num}: {field}={value!r}"
-        ) from None
+        raise ValueError(f"Could not parse row {row_num}: {field}={value!r}") from None
 
     if not np.isfinite(parsed):
-        raise ValueError(
-            f"Non-finite required value in row {row_num}: {field}={value!r}"
-        )
+        raise ValueError(f"Non-finite required value in row {row_num}: {field}={value!r}")
 
     if non_negative and parsed < 0.0:
-        raise ValueError(
-            f"Negative required value in row {row_num}: {field}={value!r}"
-        )
+        raise ValueError(f"Negative required value in row {row_num}: {field}={value!r}")
     return parsed
 
 
@@ -335,20 +305,13 @@ def _parse_optional_float(
         parsed = float(text)
     except (TypeError, ValueError):
         raise ValueError(
-            f"Could not parse optional numeric field in row {row_num}: "
-            f"{field}={value!r}"
+            f"Could not parse optional numeric field in row {row_num}: {field}={value!r}"
         ) from None
 
     if not np.isfinite(parsed):
-        raise ValueError(
-            f"Non-finite optional value in row {row_num}: "
-            f"{field}={value!r}"
-        )
+        raise ValueError(f"Non-finite optional value in row {row_num}: {field}={value!r}")
     if non_negative and parsed < 0.0:
-        raise ValueError(
-            f"Negative optional value in row {row_num}: "
-            f"{field}={value!r}"
-        )
+        raise ValueError(f"Negative optional value in row {row_num}: {field}={value!r}")
     return parsed
 
 
@@ -377,7 +340,7 @@ def _parse_optional_fraction(
     return parsed
 
 
-def _parse_optional_str(row_num: int, field: str, value: Any) -> str | None:
+def _parse_optional_str(_row_num: int, _field: str, value: Any) -> str | None:
     if value is None:
         return None
     text = str(value).strip()
@@ -401,8 +364,7 @@ def _parse_optional_timestamp(row_num: int, field: str, value: Any) -> str | Non
         dt = datetime.fromisoformat(normalized)
     except (TypeError, ValueError) as exc:
         raise ValueError(
-            f"Could not parse optional timestamp field in row {row_num}: "
-            f"{field}={value!r}"
+            f"Could not parse optional timestamp field in row {row_num}: {field}={value!r}"
         ) from exc
 
     return dt.isoformat()
@@ -415,15 +377,11 @@ def _parse_required_timestamp(
 ) -> str:
     parsed = _parse_optional_timestamp(row_num, field, value)
     if parsed is None:
-        raise ValueError(
-            f"Missing required timestamp in row {row_num}: {field}={value!r}"
-        )
+        raise ValueError(f"Missing required timestamp in row {row_num}: {field}={value!r}")
     return parsed
 
 
-def _build_history_envelope(
-    rows: list[dict[str, Any]]
-) -> dict[str, dict[str, Any]]:
+def _build_history_envelope(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     by_key: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
         by_key.setdefault(f"{row['cell_id']}|{row['experiment_id']}", []).append(row)
@@ -439,18 +397,23 @@ def _build_history_envelope(
             for row in intervals
         ]
         durations = [
-            (row["interval_end_dt"] - row["interval_start_dt"]).total_seconds()
-            / 3600.0
+            (row["interval_end_dt"] - row["interval_start_dt"]).total_seconds() / 3600.0
             for row in intervals
         ]
-        temperature = [float(row["temperature_c"]) for row in intervals
-                       if row["temperature_c"] is not None]
-        c_rates = [float(row["c_rate"]) for row in intervals
-                   if row["c_rate"] is not None]
-        dod = [float(row["depth_of_discharge"]) for row in intervals
-               if row["depth_of_discharge"] is not None]
-        throughput = [float(row["energy_throughput_wh"]) for row in intervals
-                      if row["energy_throughput_wh"] is not None]
+        temperature = [
+            float(row["temperature_c"]) for row in intervals if row["temperature_c"] is not None
+        ]
+        c_rates = [float(row["c_rate"]) for row in intervals if row["c_rate"] is not None]
+        dod = [
+            float(row["depth_of_discharge"])
+            for row in intervals
+            if row["depth_of_discharge"] is not None
+        ]
+        throughput = [
+            float(row["energy_throughput_wh"])
+            for row in intervals
+            if row["energy_throughput_wh"] is not None
+        ]
         history_count = len(intervals)
         envelopes[key] = {
             "interval_count": history_count,
@@ -462,21 +425,19 @@ def _build_history_envelope(
                 min(end_times).isoformat(),
                 max(end_times).isoformat(),
             ),
-            "span_hours": (
-                (max(end_times) - min(start_times)).total_seconds() / 3600.0
-            ),
+            "span_hours": ((max(end_times) - min(start_times)).total_seconds() / 3600.0),
             "duration_hours": (
                 min(durations),
                 max(durations),
-            ) if durations else (None, None),
-            "temperature_c": (
-                min(temperature), max(temperature)
-            ) if temperature else (None, None),
+            )
+            if durations
+            else (None, None),
+            "temperature_c": (min(temperature), max(temperature)) if temperature else (None, None),
             "c_rate": (min(c_rates), max(c_rates)) if c_rates else (None, None),
             "depth_of_discharge": (min(dod), max(dod)) if dod else (None, None),
-            "energy_throughput_wh": (
-                min(throughput), max(throughput)
-            ) if throughput else (None, None),
+            "energy_throughput_wh": (min(throughput), max(throughput))
+            if throughput
+            else (None, None),
         }
     return envelopes
 
@@ -512,9 +473,7 @@ def load_duty_cycle_history(
     else:
         delimiter = "\t" if sep == r"\t" else sep
         if len(delimiter) != 1:
-            raise ValueError(
-                "Separator must be one character or the escaped tab value '\\t'."
-            )
+            raise ValueError("Separator must be one character or the escaped tab value '\\t'.")
 
     with path.open("r", newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f, delimiter=delimiter)
@@ -531,10 +490,8 @@ def load_duty_cycle_history(
 
         rows: list[dict[str, Any]] = []
         for row_i, raw_row in enumerate(reader, start=2):
-            row = {
-                "cell_id": _parse_required_string(
-                    row_i, "cell_id", raw_row["cell_id"]
-                ),
+            row: dict[str, Any] = {
+                "cell_id": _parse_required_string(row_i, "cell_id", raw_row["cell_id"]),
                 "experiment_id": _parse_required_string(
                     row_i, "experiment_id", raw_row["experiment_id"]
                 ),
@@ -550,22 +507,17 @@ def load_duty_cycle_history(
                 "_interval_end_parsed": _parse_required_timestamp(
                     row_i, "interval_end", raw_row.get("interval_end")
                 ),
-                "direction": _parse_optional_str(
-                    row_i, "direction", raw_row.get("direction")
-                ),
+                "direction": _parse_optional_str(row_i, "direction", raw_row.get("direction")),
                 "duty_cycle_profile": _parse_optional_str(
-                    row_i, "duty_cycle_profile",
+                    row_i,
+                    "duty_cycle_profile",
                     raw_row.get("duty_cycle_profile"),
                 ),
-                "protocol": _parse_optional_str(
-                    row_i, "protocol", raw_row.get("protocol")
-                ),
+                "protocol": _parse_optional_str(row_i, "protocol", raw_row.get("protocol")),
                 "operating_state": _parse_optional_str(
                     row_i, "operating_state", raw_row.get("operating_state")
                 ),
-                "source": _parse_optional_str(
-                    row_i, "source", raw_row.get("source")
-                ),
+                "source": _parse_optional_str(row_i, "source", raw_row.get("source")),
                 "temperature_c": _parse_optional_float(
                     row_i,
                     "temperature_c",
@@ -599,8 +551,7 @@ def load_duty_cycle_history(
             )
             if row["interval_end_dt"] <= row["interval_start_dt"]:
                 raise ValueError(
-                    "Invalid interval in row "
-                    f"{row_i}: interval_end must be after interval_start."
+                    f"Invalid interval in row {row_i}: interval_end must be after interval_start."
                 )
 
             row["interval_seconds"] = (
@@ -625,9 +576,7 @@ def load_duty_cycle_history(
     return rows, envelopes, schema_version
 
 
-def _build_validation_envelope(
-    rows: list[dict[str, Any]]
-) -> dict[str, dict[str, Any]]:
+def _build_validation_envelope(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     by_cell: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
         by_cell.setdefault(str(row["cell_id"]), []).append(row)
@@ -641,27 +590,25 @@ def _build_validation_envelope(
             if row["_timestamp_parsed"] is not None
         ]
         temperature_c = [
-            float(row["temperature_c"]) for row in observations
-            if row["temperature_c"] is not None
+            float(row["temperature_c"]) for row in observations if row["temperature_c"] is not None
         ]
-        c_rates = [
-            float(row["c_rate"]) for row in observations
-            if row["c_rate"] is not None
-        ]
+        c_rates = [float(row["c_rate"]) for row in observations if row["c_rate"] is not None]
         rest_time = [
-            float(row["rest_time_h"]) for row in observations
-            if row["rest_time_h"] is not None
+            float(row["rest_time_h"]) for row in observations if row["rest_time_h"] is not None
         ]
         cycles_per_day = [
-            float(row["cycles_per_day"]) for row in observations
+            float(row["cycles_per_day"])
+            for row in observations
             if row["cycles_per_day"] is not None
         ]
         dod = [
-            float(row["depth_of_discharge"]) for row in observations
+            float(row["depth_of_discharge"])
+            for row in observations
             if row["depth_of_discharge"] is not None
         ]
         throughput = [
-            float(row["energy_throughput_wh"]) for row in observations
+            float(row["energy_throughput_wh"])
+            for row in observations
             if row["energy_throughput_wh"] is not None
         ]
 
@@ -671,25 +618,24 @@ def _build_validation_envelope(
             "timestamp_range": (
                 min(timestamps).isoformat(),
                 max(timestamps).isoformat(),
-            ) if timestamps else (None, None),
-            "timestamp_span_days": (
-                (max(timestamps) - min(timestamps)).total_seconds() / 86400.0
-            ) if timestamps else None,
-            "temperature_c": (
-                min(temperature_c), max(temperature_c)
-            ) if temperature_c else (None, None),
+            )
+            if timestamps
+            else (None, None),
+            "timestamp_span_days": ((max(timestamps) - min(timestamps)).total_seconds() / 86400.0)
+            if timestamps
+            else None,
+            "temperature_c": (min(temperature_c), max(temperature_c))
+            if temperature_c
+            else (None, None),
             "c_rate": (min(c_rates), max(c_rates)) if c_rates else (None, None),
-            "rest_time_h": (min(rest_time), max(rest_time))
-            if rest_time else (None, None),
-            "cycles_per_day": (
-                min(cycles_per_day), max(cycles_per_day)
-            ) if cycles_per_day else (None, None),
-            "depth_of_discharge": (
-                min(dod), max(dod)
-            ) if dod else (None, None),
-            "energy_throughput_wh": (
-                min(throughput), max(throughput)
-            ) if throughput else (None, None),
+            "rest_time_h": (min(rest_time), max(rest_time)) if rest_time else (None, None),
+            "cycles_per_day": (min(cycles_per_day), max(cycles_per_day))
+            if cycles_per_day
+            else (None, None),
+            "depth_of_discharge": (min(dod), max(dod)) if dod else (None, None),
+            "energy_throughput_wh": (min(throughput), max(throughput))
+            if throughput
+            else (None, None),
         }
 
     return envelopes
@@ -700,16 +646,17 @@ def _ensure_optional_columns(
     optional_columns: list[str],
 ) -> None:
     for row in rows:
-        for field in optional_columns:
-            row.setdefault(field, None)
+        for field_name in optional_columns:
+            row.setdefault(field_name, None)
 
 
-def load_cycle_data(csv_path: str | Path,
-                    cycle_col: str = "cycle",
-                    capacity_col: str = "capacity",
-                    sep: str | None = None,
-                    normalize: bool = True
-                    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+def load_cycle_data(
+    csv_path: str | Path,
+    cycle_col: str = "cycle",
+    capacity_col: str = "capacity",
+    sep: str | None = None,
+    normalize: bool = True,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """
     Load cycle-capacity data from a CSV/TSV-like table.
 
@@ -747,9 +694,7 @@ def load_cycle_data(csv_path: str | Path,
     else:
         delimiter = "\t" if sep == r"\t" else sep
         if len(delimiter) != 1:
-            raise ValueError(
-                "Separator must be one character or the escaped tab value '\\t'."
-            )
+            raise ValueError("Separator must be one character or the escaped tab value '\\t'.")
 
     with path.open("r", newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f, delimiter=delimiter)
@@ -834,9 +779,7 @@ def load_cycle_data_long_form(
     else:
         delimiter = "\t" if sep == r"\t" else sep
         if len(delimiter) != 1:
-            raise ValueError(
-                "Separator must be one character or the escaped tab value '\\t'."
-            )
+            raise ValueError("Separator must be one character or the escaped tab value '\\t'.")
 
     with path.open("r", newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f, delimiter=delimiter)
@@ -853,7 +796,7 @@ def load_cycle_data_long_form(
 
         rows: list[dict[str, Any]] = []
         for row_i, raw_row in enumerate(reader, start=2):
-            row = {
+            row: dict[str, Any] = {
                 "cell_id": _parse_required_string(row_i, "cell_id", raw_row["cell_id"]),
                 "cycle": _parse_required_float(
                     row_i,
@@ -951,8 +894,7 @@ def load_cycle_data_long_form(
             base_capacity = float(sorted_group[0]["capacity"])
             if np.isclose(base_capacity, 0.0):
                 raise ValueError(
-                    f"Cannot normalize because first capacity for cell_id='{cell_id}' "
-                    "is zero."
+                    f"Cannot normalize because first capacity for cell_id='{cell_id}' is zero."
                 )
             for row in group:
                 row["capacity"] = float(row["capacity"]) / base_capacity

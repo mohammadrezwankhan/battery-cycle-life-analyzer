@@ -1,20 +1,24 @@
 """Tests for bcla.core"""
 
+from typing import Optional
+
 import numpy as np
 import pytest
+from numpy.typing import ArrayLike
+
 import bcla.core as core
 from bcla.core import (
-    fit_capacity_fade,
-    fit_all_models,
+    arrhenius_acceleration_factor,
     best_model,
     bootstrap_life_projection,
+    fit_all_models,
+    fit_capacity_fade,
     select_model_by_validation,
     temporal_holdout_scores,
-    arrhenius_acceleration_factor,
 )
 
 
-def test_fit_linear_returns_reasonable_rmse():
+def test_fit_linear_returns_reasonable_rmse() -> None:
     x = np.arange(1, 501, dtype=float)
     y = 1.0 - 0.0002 * x
     result = fit_capacity_fade(x, y, model="linear")
@@ -23,7 +27,7 @@ def test_fit_linear_returns_reasonable_rmse():
     assert abs(result.params["k"] - 0.0002) < 0.0001
 
 
-def test_fit_result_project_returns_a_scalar_for_float_coordinates():
+def test_fit_result_project_returns_a_scalar_for_float_coordinates() -> None:
     x = np.arange(1, 501, dtype=float)
     y = 1.0 - 0.0002 * x
     result = fit_capacity_fade(x, y, model="linear")
@@ -34,25 +38,25 @@ def test_fit_result_project_returns_a_scalar_for_float_coordinates():
     assert projected == pytest.approx(1.0 - 0.0002 * 750.5, abs=1e-9)
 
 
-def test_fit_power_law_on_noisy_lfp():
+def test_fit_power_law_on_noisy_lfp() -> None:
     """Power law should fit noisy LFP-like data with reasonable RMSE."""
     x = np.arange(1, 1001, dtype=float)
     rng = np.random.default_rng(42)
-    y = 1.0 - 0.01 * x ** 0.6 + rng.normal(0, 0.005, size=1000)
+    y = 1.0 - 0.01 * x**0.6 + rng.normal(0, 0.005, size=1000)
     result = fit_capacity_fade(x, y, model="power_law")
     assert result.rmse < 0.02
     assert result.r_squared > 0.95
     assert 0.8 < result.params["Q0"] < 1.2
 
 
-def test_fit_all_models_returns_three():
+def test_fit_all_models_returns_three() -> None:
     x = np.arange(1, 501, dtype=float)
     y = 1.0 - 0.0002 * x
     results = fit_all_models(x, y)
     assert set(results) == {"linear", "power_law", "logarithmic"}
 
 
-def test_best_model_picks_lowest_rmse():
+def test_best_model_picks_lowest_rmse() -> None:
     x = np.arange(1, 501, dtype=float)
     y = 1.0 - 0.0002 * x
     results = fit_all_models(x, y)
@@ -62,9 +66,9 @@ def test_best_model_picks_lowest_rmse():
     assert results[name].rmse < 0.01
 
 
-def test_temporal_holdout_selects_power_law_and_refits_all_data():
+def test_temporal_holdout_selects_power_law_and_refits_all_data() -> None:
     x = np.arange(1, 501, dtype=float)
-    y = 1.0 - 0.003 * x ** 0.7
+    y = 1.0 - 0.003 * x**0.7
 
     selection = select_model_by_validation(x[::-1], y[::-1])
 
@@ -76,7 +80,7 @@ def test_temporal_holdout_selects_power_law_and_refits_all_data():
     assert np.all(np.diff(selection.fit.cycles) >= 0)
 
 
-def test_temporal_holdout_scores_reject_invalid_split():
+def test_temporal_holdout_scores_reject_invalid_split() -> None:
     x = np.arange(1, 7, dtype=float)
     y = 1.0 - 0.001 * x
 
@@ -88,7 +92,7 @@ def test_temporal_holdout_scores_reject_invalid_split():
         raise AssertionError("expected an invalid temporal split to fail")
 
 
-def test_temporal_holdout_rejects_negative_cycles():
+def test_temporal_holdout_rejects_negative_cycles() -> None:
     x = np.array([-1, 1, 2, 3, 4, 5, 6], dtype=float)
     y = 1.0 - 0.001 * x
 
@@ -96,7 +100,7 @@ def test_temporal_holdout_rejects_negative_cycles():
         temporal_holdout_scores(x, y)
 
 
-def test_temporal_holdout_requires_distinct_cycle_values():
+def test_temporal_holdout_requires_distinct_cycle_values() -> None:
     x = np.array([1, 1, 2, 3, 4, 5], dtype=float)
     y = 1.0 - 0.001 * x
 
@@ -104,7 +108,7 @@ def test_temporal_holdout_requires_distinct_cycle_values():
         temporal_holdout_scores(x, y)
 
 
-def test_temporal_holdout_keeps_duplicate_cycles_on_one_side():
+def test_temporal_holdout_keeps_duplicate_cycles_on_one_side() -> None:
     x = np.array([1, 2, 3, 4, 5, 6, 6, 7], dtype=float)
     y = 1.0 - 0.001 * x
 
@@ -115,7 +119,7 @@ def test_temporal_holdout_keeps_duplicate_cycles_on_one_side():
     assert all(score.split_cycle == 6 for score in scores.values())
 
 
-def test_r_squared_selection_rejects_constant_validation_window():
+def test_r_squared_selection_rejects_constant_validation_window() -> None:
     x = np.arange(1, 11, dtype=float)
     y = np.concatenate([1.0 - 0.01 * x[:8], np.array([0.9, 0.9])])
 
@@ -127,7 +131,7 @@ def test_r_squared_selection_rejects_constant_validation_window():
         raise AssertionError("expected undefined validation R-squared to fail")
 
 
-def test_bootstrap_life_projection_returns_reproducible_eol_rul_interval():
+def test_bootstrap_life_projection_returns_reproducible_eol_rul_interval() -> None:
     x = np.arange(1, 501, dtype=float)
     rng = np.random.default_rng(7)
     y = 1.0 - 0.0004 * x + rng.normal(0.0, 0.002, size=x.size)
@@ -154,7 +158,7 @@ def test_bootstrap_life_projection_returns_reproducible_eol_rul_interval():
     assert interval.rul_lower <= interval.rul_estimate <= interval.rul_upper
 
 
-def test_bootstrap_withholds_interval_when_projection_is_censored():
+def test_bootstrap_withholds_interval_when_projection_is_censored() -> None:
     x = np.arange(1, 101, dtype=float)
     rng = np.random.default_rng(4)
     y = 1.0 + rng.normal(0.0, 0.001, size=x.size)
@@ -175,7 +179,7 @@ def test_bootstrap_withholds_interval_when_projection_is_censored():
     assert interval.rul_upper is None
 
 
-def test_bootstrap_withholds_interval_after_partial_right_censoring():
+def test_bootstrap_withholds_interval_after_partial_right_censoring() -> None:
     x = np.arange(1, 501, dtype=float)
     rng = np.random.default_rng(0)
     y = 1.0 - 0.00014 * x + rng.normal(0.0, 0.03, size=x.size)
@@ -191,9 +195,7 @@ def test_bootstrap_withholds_interval_after_partial_right_censoring():
     assert interval.censored_samples > 0
     assert interval.failed_samples == 0
     assert (
-        interval.successful_samples
-        + interval.censored_samples
-        + interval.failed_samples
+        interval.successful_samples + interval.censored_samples + interval.failed_samples
         == interval.requested_samples
     )
     assert interval.eol_lower is None
@@ -202,7 +204,7 @@ def test_bootstrap_withholds_interval_after_partial_right_censoring():
     assert interval.rul_upper is None
 
 
-def test_bootstrap_rejects_zero_residual_variance():
+def test_bootstrap_rejects_zero_residual_variance() -> None:
     x = np.arange(1, 101, dtype=float)
     y = 1.0 - 0.001 * x
     fitted = fit_capacity_fade(x, y, model="linear")
@@ -211,7 +213,9 @@ def test_bootstrap_rejects_zero_residual_variance():
         bootstrap_life_projection(fitted, samples=20, random_state=1)
 
 
-def test_bootstrap_withholds_interval_after_any_fit_failure(monkeypatch):
+def test_bootstrap_withholds_interval_after_any_fit_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     x = np.arange(1, 501, dtype=float)
     rng = np.random.default_rng(7)
     y = 1.0 - 0.0004 * x + rng.normal(0.0, 0.002, size=x.size)
@@ -219,12 +223,17 @@ def test_bootstrap_withholds_interval_after_any_fit_failure(monkeypatch):
     original_fit = core.fit_capacity_fade
     calls = 0
 
-    def flaky_fit(*args, **kwargs):
+    def flaky_fit(
+        cycles: ArrayLike,
+        capacity: ArrayLike,
+        model: str = "power_law",
+        q0_guess: Optional[float] = None,
+    ) -> core.FitResult:
         nonlocal calls
         calls += 1
         if calls == 1:
             raise RuntimeError("simulated numerical fit failure")
-        return original_fit(*args, **kwargs)
+        return original_fit(cycles, capacity, model, q0_guess)
 
     monkeypatch.setattr(core, "fit_capacity_fade", flaky_fit)
     interval = bootstrap_life_projection(
@@ -235,9 +244,7 @@ def test_bootstrap_withholds_interval_after_any_fit_failure(monkeypatch):
 
     assert interval.failed_samples == 1
     assert (
-        interval.successful_samples
-        + interval.censored_samples
-        + interval.failed_samples
+        interval.successful_samples + interval.censored_samples + interval.failed_samples
         == interval.requested_samples
     )
     assert interval.eol_lower is None
@@ -246,7 +253,7 @@ def test_bootstrap_withholds_interval_after_any_fit_failure(monkeypatch):
     assert interval.rul_upper is None
 
 
-def test_eol_cycle_returns_sensible():
+def test_eol_cycle_returns_sensible() -> None:
     x = np.arange(1, 1001, dtype=float)
     y = 1.0 - 0.0002 * x  # reaches 0.8 at exactly cycle 1000
     result = fit_capacity_fade(x, y, model="linear")
@@ -256,7 +263,7 @@ def test_eol_cycle_returns_sensible():
     assert 900 <= eol <= 1100  # should be near 1000
 
 
-def test_eol_linear_reaches_threshold():
+def test_eol_linear_reaches_threshold() -> None:
     """Cycles beyond data: linear model should hit EOL ≈ 1000."""
     x = np.arange(1, 801, dtype=float)
     y = 1.0 - 0.0002 * x
@@ -266,7 +273,7 @@ def test_eol_linear_reaches_threshold():
     assert 900 <= eol <= 1200
 
 
-def test_arrhenius_acceleration():
+def test_arrhenius_acceleration() -> None:
     af_25 = arrhenius_acceleration_factor(25.0)
     af_45 = arrhenius_acceleration_factor(45.0)
     assert abs(af_25 - 1.0) < 1e-6
