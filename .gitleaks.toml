@@ -1,5 +1,13 @@
 title = "Rezwan default secret detection"
-# Keep the complete upstream rule set. There are no repository-wide ignores,
-# baseline suppressions, or path-based allowances for historical findings.
+# Keep the complete upstream rule set and full source/history scan scope.
+# The exact public archive fingerprint disposition below is documented and tested.
 [extend]
 useDefault = true
+
+[[allowlists]]
+description = "Exact public Ubuntu Archive 2018 signing fingerprint in the native source lock"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^(?:/tmp/rezwan-secret-source-[^/]+/)?\.github/security/native-scanner\.json$''']
+regexTarget = "match"
+regexes = ['''^distribution_signature_key": "F6ECB3762474EDA9D21B7022871920D1991BC93C"$''']
