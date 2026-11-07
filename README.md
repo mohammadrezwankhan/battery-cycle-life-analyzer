@@ -4,6 +4,27 @@ The Python package fits linear, power-law, and logarithmic capacity-fade models 
 
 **[Native-source lesson guide](docs/portfolio/) · [Offline interactive lab](docs/index.html) · [Lesson configuration](docs/lesson-config.json) · [Configuration schema](docs/lesson-config.schema.json)**
 
+## Python quick start
+
+Requires Python 3.9 or newer. Install the published package from
+[PyPI](https://pypi.org/project/battery-cycle-life-analyzer/); pip installs
+NumPy, SciPy, and Matplotlib automatically:
+
+```bash
+python -m pip install battery-cycle-life-analyzer==0.3.0
+python -m bcla --model linear
+```
+
+Run in a writable directory. This synthetic LFP demonstration prints fit
+diagnostics and saves `bcla_demo.png`, replacing that file if it already exists.
+It is not a measured-cell lifetime forecast or a safety model.
+
+Repository CSV examples, notebooks, and the Oxford measured-current workflow
+require a source checkout. See the [installation guide](#installation),
+[CSV quick start](#quick-start), and
+[scientific limitations](#assumptions-and-limitations) in the expandable guide below.
+The offline browser lab is a separate teaching simulation, not the Python engine.
+
 ## Previous animations
 
 [Open the live lab](https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/) → **Previous animations** · [Open the local gallery](docs/animations/index.html)
