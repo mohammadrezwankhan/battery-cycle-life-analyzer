@@ -1,3 +1,15 @@
+<!-- repository-presentation:start -->
+
+![Battery Cycle-Life Analyzer — project overview](https://raw.githubusercontent.com/mohammadrezwankhan/mohammadrezwankhan/main/assets/makeover/social/battery-cycle-life-analyzer.png)
+
+Fit empirical battery capacity-fade models in Python with chronological model selection and bounded end-of-life projections.
+
+[Python quick start](#python-quick-start) · [CSV workflow](#quick-start) · [Python source](bcla/core.py) · [Assumptions and limits](#assumptions-and-limitations)
+
+---
+
+<!-- repository-presentation:end -->
+
 ![Battery Cycle-Life Lab: original vector system illustration](assets/hero-25d.svg)
 
 The Python package fits linear, power-law, and logarithmic capacity-fade models with chronological selection and bounded life projections. The browser exercise builds intuition for normalization and stress sensitivity.
