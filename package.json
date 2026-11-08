@@ -12,9 +12,9 @@
     "quality:browser": "node --test tests/browser/csp.test.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.1",
+    "@eslint/js": "9.39.5",
     "@types/node": "26.6.6",
-    "eslint": "9.39.1",
+    "eslint": "9.39.5",
     "globals": "17.13.0",
     "prettier": "3.9.10",
     "typescript": "5.9.3",
