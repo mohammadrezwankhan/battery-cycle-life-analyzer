@@ -407,6 +407,10 @@ def https_bytes(address: str, payload: bytes | None = None) -> bytes:
         "--retry-max-time",
         "120",
     ]
+    if payload is None and parsed.hostname == "api.github.com" and re.fullmatch(
+        r"/repos/[^/]+/[^/]+/releases/assets/[0-9]+", parsed.path
+    ):
+        command.extend(["--header", "Accept: application/octet-stream"])
     if payload is not None:
         command.extend(
             ["--header", "Content-Type: application/json", "--data-binary", "@-"]
@@ -731,6 +735,10 @@ class Builder:
                 "locked",
                 str(repository),
             ],
+        )
+        self.command(
+            "opam-archive-mirror",
+            [opam, "option", "--global", 'archive-mirrors=["https://opam.ocaml.org/cache"]'],
         )
         for phase in ("build", "install", "remove"):
             configured = self.command(

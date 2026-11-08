@@ -11,6 +11,7 @@ import tarfile
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import native_scanner
 
@@ -29,6 +30,31 @@ def archive_bytes(name: str, *, link: str | None = None) -> bytes:
             member.size = len(content)
             archive.addfile(member, io.BytesIO(content))
     return stream.getvalue()
+
+
+class ReleaseAssetTests(unittest.TestCase):
+    """GitHub release assets must be downloaded as the verified binary."""
+
+    def test_release_api_downloads_binary_not_json_metadata(self) -> None:
+        """The release API needs its binary media type before checksum verification."""
+        def response(
+            arguments: list[str], **_kwargs: object
+        ) -> subprocess.CompletedProcess[bytes]:
+            binary = b"verified binary"
+            content = (
+                binary if "Accept: application/octet-stream" in arguments else b"{}"
+            )
+            return subprocess.CompletedProcess(arguments, 0, stdout=content)
+
+        asset = {
+            "url": "https://api.github.com/repos/ocaml/opam/releases/assets/470873882",
+            "sha256": hashlib.sha256(b"verified binary").hexdigest(),
+        }
+        with tempfile.TemporaryDirectory() as temporary, patch(
+            "native_scanner.shutil.which", return_value="curl"
+        ), patch("native_scanner.subprocess.run", side_effect=response):
+            result = native_scanner.download(asset, Path(temporary))
+            self.assertEqual(result.read_bytes(), b"verified binary")
 
 
 class SourceIntegrityTests(unittest.TestCase):

@@ -8250,7 +8250,7 @@ that knows how to traverse and transform a data structure."""
   dev-repo: "git+https://gitlab.inria.fr/fpottier/visitors.git"
   url {
     src:
-      "https://github.com/opengrep/visitors/archive/e18a7a67150a54a3aef51661e0317cacc313d764.tar.gz"
+      "https://codeload.github.com/opengrep/visitors/tar.gz/e18a7a67150a54a3aef51661e0317cacc313d764"
     checksum: "sha256=a4f0a3783e35905eb37e5b643b9afa1aa52d779ca860da45106e24e9fb2d22db"
   }
   x-maintenance-intent: ["(latest)"]
