@@ -22,6 +22,26 @@ updates:
   open-pull-requests-limit: 5
   cooldown:
     default-days: 7
+  # OpenGrep 1.33.1 runtime bounds; revisit when scanner bounds change.
+  # Update-type filters keep security updates eligible.
+  # Source: https://github.com/dependabot/dependabot-core/blob/05146d8f2a50ea4adf6e00a197c85afae99f7051/common/lib/dependabot/config/ignore_condition.rb
+  ignore:
+  - dependency-name: boltons
+    update-types:
+    - version-update:semver-major
+  - dependency-name: glom
+    update-types:
+    - version-update:semver-major
+  - dependency-name: peewee
+    update-types:
+    - version-update:semver-major
+  - dependency-name: rich
+    update-types:
+    - version-update:semver-minor
+    - version-update:semver-major
+  - dependency-name: wcmatch
+    update-types:
+    - version-update:semver-major
 - package-ecosystem: npm
   directory: /
   schedule:
