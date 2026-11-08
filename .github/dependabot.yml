@@ -49,6 +49,24 @@ updates:
   open-pull-requests-limit: 5
   cooldown:
     default-days: 7
+  # Keep routine tooling updates within the full declared Node >=22 range.
+  # TypeScript 6+ exceeds the retained parser peer range; parser 8.72.1 adds
+  # a narrower transitive Node range. Revisit these limits with compatibility tests.
+  # Update-type filters preserve security-update eligibility; do not add versions.
+  ignore:
+  - dependency-name: eslint
+    update-types:
+    - version-update:semver-major
+  - dependency-name: '@eslint/js'
+    update-types:
+    - version-update:semver-major
+  - dependency-name: typescript
+    update-types:
+    - version-update:semver-major
+  - dependency-name: typescript-eslint
+    update-types:
+    - version-update:semver-minor
+    - version-update:semver-major
   groups:
     development-tooling:
       dependency-type: development
