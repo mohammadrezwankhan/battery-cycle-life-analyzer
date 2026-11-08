@@ -2,8 +2,13 @@
 # Restore the official setup-python 3.9 asset if the hosted image omits it.
 set -euo pipefail
 
-. /etc/os-release
-if [[ "$ID" != ubuntu || "$VERSION_ID" != 24.04 || "$(uname -m)" != x86_64 ]]; then
+if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
+  exit 0
+fi
+if ! . /etc/os-release 2>/dev/null; then
+  exit 0
+fi
+if [[ "${ID:-}" != ubuntu || "${VERSION_ID:-}" != 24.04 ]]; then
   exit 0
 fi
 for marker in "$RUNNER_TOOL_CACHE"/Python/3.9.*/x64.complete; do
