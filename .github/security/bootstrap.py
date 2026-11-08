@@ -28,7 +28,12 @@ def install_binary(
     if urllib.parse.urlsplit(spec["url"]).scheme != "https":
         raise ValueError("Scanner release URLs must use HTTPS")
     request = urllib.request.Request(  # noqa: S310 -- HTTPS checked immediately above
-        spec["url"], headers={"User-Agent": "Rezwan-security-bootstrap"}
+        spec["url"],
+        headers={
+            "User-Agent": "Rezwan-security-bootstrap",
+            "Accept": "application/octet-stream",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
     )
     # This exact fetch is reviewed: HTTPS is required and bytes cannot be executed
     # unless their SHA-256 matches the checked release manifest. Contract tests
