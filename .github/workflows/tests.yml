@@ -31,6 +31,12 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Restore verified Python 3.9 tool-cache when missing
+        if: matrix.python-version == '3.9' && runner.os == 'Linux'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/bootstrap-python39.sh
+
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
