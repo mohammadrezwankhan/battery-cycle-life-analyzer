@@ -303,6 +303,24 @@ def scanner_archive(*, symbolic: bool = False) -> bytes:
 class BootstrapContractTests(unittest.TestCase):
     """Authenticate release bytes and avoid unsafe archive extraction."""
 
+    def test_release_asset_requests_archive_bytes(self) -> None:
+        """Request the archive representation of a pinned release asset."""
+        blob = scanner_archive()
+        spec = {
+            "url": "https://api.github.com/repos/example/repo/releases/assets/1",
+            "version": "test",
+            "sha256": hashlib.sha256(blob).hexdigest(),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            with mock.patch(
+                "urllib.request.urlopen", return_value=io.BytesIO(blob)
+            ) as download:
+                bootstrap.install_binary("scanner", spec, pathlib.Path(directory))
+            self.assertEqual(
+                download.call_args.args[0].get_header("Accept"),
+                "application/octet-stream",
+            )
+
     def test_verified_archive_extracts_only_regular_expected_binary(self) -> None:
         """Ignore traversal entries rather than extracting a complete archive."""
         blob = scanner_archive()
