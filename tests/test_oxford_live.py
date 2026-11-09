@@ -1,6 +1,7 @@
 """Opt-in integration checks against the official Oxford ORA files."""
 
 import os
+from urllib.error import HTTPError
 
 import pytest
 
@@ -28,7 +29,14 @@ def test_official_oxford_files_reproduce_audited_efc(
 ) -> None:
     expected_efc, expected_retention = expected
 
-    cell = oxford.load_oxford_cell(cell_id)
+    try:
+        cell = oxford.load_oxford_cell(cell_id)
+    except HTTPError as exc:
+        # The archive may block CI traffic even when the source record exists.
+        # Only an explicit access denial is inconclusive; other errors must fail.
+        if exc.code == 403:
+            pytest.skip("Official Oxford ORA returned HTTP 403 to the CI runner")
+        raise
 
     assert cell.efc.size == 13
     assert cell.efc[-1] == pytest.approx(expected_efc, abs=0.01)
