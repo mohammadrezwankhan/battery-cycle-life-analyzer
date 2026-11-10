@@ -12,7 +12,7 @@
     "https://github.com/aquasecurity/trivy/releases/tag/v0.76.1",
     "https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23",
     "https://github.com/step-security/harden-runner/releases/tag/v2.22.3",
-    "https://github.com/github/codeql-action/releases/tag/v4.39.1",
+    "https://github.com/github/codeql-action/releases/tag/v4.39.2",
     "https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference",
     "https://github.com/pypa/pip-audit",
     "https://semgrep.dev/p/security-audit",
@@ -49,8 +49,8 @@
       "sha": "46b06cea07f9e64621fdf066ba77ac6915163d43"
     },
     "github/codeql-action": {
-      "version": "v4.39.1",
-      "sha": "9b3254085494b55a0f7c4c2b3d2d52cc712ce370"
+      "version": "v4.39.2",
+      "sha": "1fc58d04a4d4374f921bdac573c3811c240f9c26"
     },
     "actions/cache": {
       "version": "v6.1.0",
