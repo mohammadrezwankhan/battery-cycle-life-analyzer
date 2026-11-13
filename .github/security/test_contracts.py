@@ -11,6 +11,8 @@ import subprocess
 import tarfile
 import tempfile
 import unittest
+import urllib.request
+from email.message import Message
 from typing import Any
 from unittest import mock
 
@@ -302,6 +304,141 @@ def scanner_archive(*, symbolic: bool = False) -> bytes:
 
 class BootstrapContractTests(unittest.TestCase):
     """Authenticate release bytes and avoid unsafe archive extraction."""
+
+    def test_github_api_release_uses_the_scoped_download_token(self) -> None:
+        """Authenticate the vetted API origin, including its explicit default port."""
+        blob = scanner_archive()
+        for url in (
+            "https://api.github.com/repos/example/repo/releases/assets/1",
+            "https://api.github.com:443/repos/example/repo/releases/assets/1",
+        ):
+            with self.subTest(url=url), tempfile.TemporaryDirectory() as directory:
+                spec = {"url": url, "version": "test", "sha256": hashlib.sha256(blob).hexdigest()}
+
+                def receive(request: urllib.request.Request, **_kwargs: object) -> io.BytesIO:
+                    self.assertEqual(request.get_header("Authorization"), "Bearer test-only-token")
+                    return io.BytesIO(blob)
+
+                with (
+                    mock.patch.dict(
+                        os.environ, {"SCANNER_DOWNLOAD_TOKEN": "test-only-token"}, clear=True
+                    ),
+                    mock.patch("urllib.request.urlopen", side_effect=receive),
+                ):
+                    bootstrap.install_binary("scanner", spec, pathlib.Path(directory))
+                self.assertTrue((pathlib.Path(directory) / "scanner").is_file())
+
+    def test_github_api_release_remains_anonymous_without_a_download_token(self) -> None:
+        """Missing and empty credentials preserve anonymous local downloads."""
+        blob = scanner_archive()
+        spec = {
+            "url": "https://api.github.com/repos/example/repo/releases/assets/1",
+            "version": "test",
+            "sha256": hashlib.sha256(blob).hexdigest(),
+        }
+        for environment in (
+            {},
+            {"SCANNER_DOWNLOAD_TOKEN": ""},
+            {"GITHUB_TOKEN": "unrelated-ambient-token"},
+        ):
+            with self.subTest(environment=environment), tempfile.TemporaryDirectory() as directory:
+
+                def receive(request: urllib.request.Request, **_kwargs: object) -> io.BytesIO:
+                    self.assertIsNone(request.get_header("Authorization"))
+                    return io.BytesIO(blob)
+
+                with (
+                    mock.patch.dict(os.environ, environment, clear=True),
+                    mock.patch("urllib.request.urlopen", side_effect=receive),
+                ):
+                    bootstrap.install_binary("scanner", spec, pathlib.Path(directory))
+                self.assertTrue((pathlib.Path(directory) / "scanner").is_file())
+
+    def test_other_https_origins_never_receive_the_download_token(self) -> None:
+        """Suffix hosts, userinfo and non-default ports cannot acquire API credentials."""
+        blob = scanner_archive()
+        for url in (
+            "https://example.invalid/scanner.tar.gz",
+            "https://api.github.com.evil.invalid/scanner.tar.gz",
+            "https://api.github.com@evil.invalid/scanner.tar.gz",
+            "https://user@api.github.com/repos/example/repo/releases/assets/1",
+            "https://user:password@api.github.com/repos/example/repo/releases/assets/1",
+            "https://api.github.com:8443/repos/example/repo/releases/assets/1",
+            "https://api.github.com./repos/example/repo/releases/assets/1",
+        ):
+            with self.subTest(url=url), tempfile.TemporaryDirectory() as directory:
+                spec = {"url": url, "version": "test", "sha256": hashlib.sha256(blob).hexdigest()}
+
+                def receive(request: urllib.request.Request, **_kwargs: object) -> io.BytesIO:
+                    self.assertIsNone(request.get_header("Authorization"))
+                    return io.BytesIO(blob)
+
+                with (
+                    mock.patch.dict(
+                        os.environ, {"SCANNER_DOWNLOAD_TOKEN": "test-only-token"}, clear=True
+                    ),
+                    mock.patch("urllib.request.urlopen", side_effect=receive),
+                ):
+                    bootstrap.install_binary("scanner", spec, pathlib.Path(directory))
+                self.assertTrue((pathlib.Path(directory) / "scanner").is_file())
+
+    def test_download_token_is_not_forwarded_by_real_stdlib_redirects(self) -> None:
+        """Neither a same-origin nor a release-CDN redirect receives the original token."""
+        blob = scanner_archive()
+        spec = {
+            "url": "https://api.github.com/repos/example/repo/releases/assets/1",
+            "version": "test",
+            "sha256": hashlib.sha256(blob).hexdigest(),
+        }
+        for location in (
+            "https://api.github.com/redirected-asset",
+            "https://release-assets.githubusercontent.com/example/scanner.tar.gz",
+        ):
+            with self.subTest(location=location), tempfile.TemporaryDirectory() as directory:
+
+                def receive(
+                    request: urllib.request.Request,
+                    *,
+                    target: str = location,
+                    **_kwargs: object,
+                ) -> io.BytesIO:
+                    self.assertEqual(request.get_header("Authorization"), "Bearer test-only-token")
+                    redirected = urllib.request.HTTPRedirectHandler().redirect_request(
+                        request, None, 302, "Found", Message(), target
+                    )
+                    if redirected is None:
+                        self.fail("The real stdlib handler refused the fixture's GET redirect")
+                    self.assertIsNone(redirected.get_header("Authorization"))
+                    self.assertEqual(redirected.full_url, target)
+                    return io.BytesIO(blob)
+
+                with (
+                    mock.patch.dict(
+                        os.environ, {"SCANNER_DOWNLOAD_TOKEN": "test-only-token"}, clear=True
+                    ),
+                    mock.patch("urllib.request.urlopen", side_effect=receive),
+                ):
+                    bootstrap.install_binary("scanner", spec, pathlib.Path(directory))
+                self.assertTrue((pathlib.Path(directory) / "scanner").is_file())
+
+    def test_authenticated_download_still_rejects_a_digest_mismatch(self) -> None:
+        """API authentication cannot make tampered release bytes executable."""
+        blob = scanner_archive()
+        spec = {
+            "url": "https://api.github.com/repos/example/repo/releases/assets/1",
+            "version": "test",
+            "sha256": "0" * 64,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                mock.patch.dict(
+                    os.environ, {"SCANNER_DOWNLOAD_TOKEN": "test-only-token"}, clear=True
+                ),
+                mock.patch("urllib.request.urlopen", return_value=io.BytesIO(blob)),
+                self.assertRaises(RuntimeError),
+            ):
+                bootstrap.install_binary("scanner", spec, pathlib.Path(directory))
+            self.assertFalse((pathlib.Path(directory) / "scanner").exists())
 
     def test_release_asset_requests_archive_bytes(self) -> None:
         """Request the archive representation of a pinned release asset."""

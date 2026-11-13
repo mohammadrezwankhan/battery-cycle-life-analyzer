@@ -55,6 +55,8 @@ jobs:
           path: ${{ runner.temp }}/rezwan-security-sast/native
           key: native-scanner-ubuntu-24.04-${{ runner.arch }}-${{ hashFiles('.github/security/native_scanner.py', '.github/security/bootstrap.py', '.github/security/native-scanner.json', '.github/security/native-switch.export', '.github/security/requirements.txt', '.github/security/requirements-bootstrap.txt', '.github/security/requirements-build.txt') }}
       - name: Install verified development scanners
+        env:
+          SCANNER_DOWNLOAD_TOKEN: ${{ github.token }}
         run: python .github/security/bootstrap.py "$SECURITY_SCAN_MODE" --destination "$SECURITY_TOOL_DIR"
       - name: Cache verified native scanner outputs
         if: matrix.mode == 'sast' && steps.native-scanner-cache.outputs.cache-hit != 'true'
