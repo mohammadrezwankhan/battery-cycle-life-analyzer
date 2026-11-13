@@ -55,7 +55,7 @@ bcla = "bcla.__main__:main"
 include = ["bcla*"]
 
 [dependency-groups]
-dev = ["ruff==0.17.3", "mypy==2.4.1", "pytest==9.2.0", "pytest-cov==7.1.0", "hypothesis==6.170.14", "scipy-stubs==1.17.0.2"]
+dev = ["ruff==0.17.4", "mypy==2.4.1", "pytest==9.2.0", "pytest-cov==7.1.0", "hypothesis==6.170.14", "scipy-stubs==1.17.0.2"]
 
 [tool.ruff]
 target-version = "py39"
