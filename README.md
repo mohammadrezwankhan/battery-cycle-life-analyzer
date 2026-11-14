@@ -10,7 +10,7 @@ Fit empirical battery capacity-fade models in Python with chronological model se
 
 <!-- repository-presentation:end -->
 
-![Battery Cycle-Life Lab: original vector system illustration](assets/hero-25d.svg)
+![Battery Cycle-Life Lab: original vector system illustration](assets/brand-uniformity/hero-25d.svg)
 
 The Python package fits linear, power-law, and logarithmic capacity-fade models with chronological selection and bounded life projections. The browser exercise builds intuition for normalization and stress sensitivity.
 
