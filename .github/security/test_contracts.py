@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import io
 import json
 import os
@@ -12,7 +13,6 @@ import tarfile
 import tempfile
 import unittest
 import urllib.request
-from email.message import Message
 from typing import Any
 from unittest import mock
 
@@ -404,7 +404,7 @@ class BootstrapContractTests(unittest.TestCase):
                 ) -> io.BytesIO:
                     self.assertEqual(request.get_header("Authorization"), "Bearer test-only-token")
                     redirected = urllib.request.HTTPRedirectHandler().redirect_request(
-                        request, None, 302, "Found", Message(), target
+                        request, io.BytesIO(blob), 302, "Found", http.client.HTTPMessage(), target
                     )
                     if redirected is None:
                         self.fail("The real stdlib handler refused the fixture's GET redirect")
