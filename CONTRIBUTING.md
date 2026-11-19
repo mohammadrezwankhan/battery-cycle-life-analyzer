@@ -102,3 +102,10 @@ with:
 Please do not use the issue tracker for battery-safety decisions. Consult a
 qualified battery engineer and the cell manufacturer's documentation for
 safety-critical work.
+
+
+## Maintaining the reference handbook
+
+Use the [documentation runbook](docs/maintainer/DOCS_MAINTENANCE_RUNBOOK.md) for source citations, canonical Markdown, the derived static reading view and complete link/CSP checks. Follow the [API contracts](docs/developer/API_CLI_AND_INTERFACES.md), [scientific limits](docs/math-and-physics/ASSUMPTIONS_AND_LIMITS.md) and [verification ledger](docs/maintainer/VERIFICATION_EVIDENCE_LEDGER.md) when changing claims or examples. Keep native code, notebook outputs, dependencies and release metadata out of an unrelated documentation change.
+
+The [roadmap](ROADMAP.md) contains proposals with acceptance criteria, not preapproved application changes. The [governance page](docs/owner/GOVERNANCE_AND_SCOPE.md) defines review roles without inventing staffing or historical approvals.
