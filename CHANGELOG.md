@@ -47,3 +47,10 @@ All notable changes to this project are documented in this file.
 - Command-line interface and Colab demonstration notebook.
 - Tests across Python 3.9, 3.10, 3.11, and 3.12.
 - MIT license and contributor guidance.
+
+
+## Documentation snapshot — 2026-11-19
+
+This documentation-only package adds a canonical developer/scientific/maintainer/owner handbook, source/interface accounting, a reproducible static reading view, existing-site navigation and a proposed twelve-calendar-month roadmap. Native numerical code, workflows, dependencies, notebook/data/results, license and citation content are preserved.
+
+This entry does not announce a software release or certify a deployment. Existing release headings above remain historical source text. The [release playbook](docs/maintainer/CI_CD_AND_RELEASE_PLAYBOOK.md) records the observed difference between package/runtime/changelog and published artifact identities.

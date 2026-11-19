@@ -1,0 +1,57 @@
+# APIs, CLI and data interfaces
+
+The [native declaration catalog](API_REFERENCE.md) records every source-defined public class/function/method in the six native modules, including decorator-inclusive source links and dataclass fields. Parameters without `/` or `*` are positional-or-keyword; defaults make values optional. `FitResult.summary` uses a keyword-only `ascii_only`, and EFC's `query_time_s` is keyword-only. Imported third-party names and private helpers are not promoted to stable APIs. [bcla/core.py:57–125](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/core.py#L57-L125) [bcla/datasets.py:108–114](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/datasets.py#L108-L114)
+
+## Native object and function contracts
+
+| Entry | Input/output and limits |
+| --- | --- |
+| `fit_capacity_fade(cycles, capacity, model="power_law", q0_guess=None)` | Finite nonempty aligned **1-D** arrays, cycles ≥0; returns mutable `FitResult`. Does not normalize, sort, require positive capacity, or enforce a per-family distinct-observation minimum before SciPy. Initial `Q0` defaults to maximum capacity. |
+| `fit_all_models(cycles, capacity)` | Fits all three registry families and returns a name → result dictionary; an exception can stop the complete operation. |
+| `best_model(results, criterion="rmse")` | Returns `(name, FitResult)` using minimum in-sample RMSE or maximum in-sample R². |
+| `temporal_holdout_scores(..., validation_fraction=0.2)` | Flattens numeric inputs, stably sorts cycles, keeps duplicates together, and returns three frozen `ValidationScore` records; at least four distinct training and two distinct held-out cycles. |
+| `select_model_by_validation(..., criterion="rmse")` | Returns mutable `ModelSelection`; `selection.validation_score` exposes the selected score, including train/validation sizes. Its `fit` is a **full-data refit**, not the earlier training fit. |
+| `FitResult.project(target_cycles)` | Finite nonnegative scalar → finite float or `ValueError`. No three-times-horizon guard and no zero-capacity clamp; negative extrapolated capacity is possible. |
+| `FitResult.eol_cycle(eol_fraction=0.8)` | Fraction in (0, 1); first grid crossing of fitted `Q0 × fraction` within `0..3 max(observed cycles)`, otherwise `None`. |
+| `bootstrap_life_projection(...)` | Result, fraction .8, current cycle `None`→maximum observed cycle, confidence .95, samples 500, random state `None`; returns frozen `LifeProjectionInterval`. Samples must be integer ≥20; all replicates must fit and cross within their search window for interval bounds. |
+| `arrhenius_acceleration_factor(temperature_c, reference_c=25.0, activation_ev=0.5)` | Finite Celsius temperatures above absolute zero and finite activation energy → positive finite acceleration factor. Negative activation energy is accepted; this helper is not automatically coupled to fitted trajectories. |
+| `viz.capacity_fade`, `model_comparison`, `eol_vs_temperature` | Return Matplotlib `Axes`, `Figure`, `Axes`; global plotting style is applied. The comparison uses three axes; the temperature view is a separate illustrative linear-rate scaling. |
+
+[bcla/core.py:57–173](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/core.py#L57-L173) [bcla/core.py:179–404](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/core.py#L179-L404) [bcla/core.py:407–566](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/core.py#L407-L566) [bcla/viz.py:44–201](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/viz.py#L44-L201)
+
+`FitResult.params` uses the exact keys `Q0`, `k`, `α`, `β`, `a`, `b` for the relevant family. Covariance rows/columns follow registry parameter order. Arrays and dictionaries remain mutable even inside frozen wrapper dataclasses; freezing prevents attribute reassignment, not deep mutation. `bcla.__all__` re-exports `LongFormCycleData` and four dataset helpers; import fitting functions through `bcla.core`. [bcla/core.py:38–42](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/core.py#L38-L42) [bcla/core.py:57–173](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/core.py#L57-L173) [bcla/datasets.py:206–262](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/datasets.py#L206-L262) [bcla/__init__.py:15–31](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/__init__.py#L15-L31)
+
+## File and current-profile interfaces
+
+| Interface | Schema and behavior |
+| --- | --- |
+| `load_cycle_data(csv_path, cycle_col="cycle", capacity_col="capacity", sep=None, normalize=True)` | UTF-8/BOM CSV; `.tsv`/`.tab` chooses tab unless separator supplied; exact case-sensitive headers. Returns two arrays in input row order. Normalization divides by the **first input row**; denominator near zero is rejected. Loader permits finite negative cycles/capacity; native fitting rejects negative cycles. |
+| `load_cycle_data_long_form(...)` | Required `cell_id,cycle,capacity`. Optional `chemistry,timestamp_iso,temperature_c,c_rate,rest_time_h,cycles_per_day,depth_of_discharge,energy_throughput_wh,duty_cycle_profile,protocol,source`. Unknown extra columns are not retained. Returns `LongFormCycleData`. |
+| `LongFormCycleData.for_cell(cell_id)` | Stable cycle-sorted arrays; unknown ID raises `KeyError`. Normalization uses each cell's **earliest cycle observation**, unlike the simple loader. `cycles`/`capacity` aliases reject multicell tables. |
+| `load_duty_cycle_history(...)` | Required `cell_id,experiment_id,interval_start,interval_end`. Optional direction/profile/protocol/state, temperature, C-rate, DoD, throughput and source. End must exceed start; returns `(rows, interval_summaries, schema_version)`. |
+| `equivalent_full_cycles(time_s,current_a,nominal_capacity_ah,*,query_time_s=None)` | Aligned finite 1-D arrays with at least two samples; nonnegative strictly increasing seconds and positive nominal Ah. Positive current is discharge. Clips sampled current before linear interpolation/integration. Optional finite queries must fall inside the measured range; scalar becomes a one-element array. |
+
+[bcla/datasets.py:74–203](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/datasets.py#L74-L203) [bcla/datasets.py:206–262](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/datasets.py#L206-L262) [bcla/datasets.py:445–576](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/datasets.py#L445-L576) [bcla/datasets.py:653–923](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/datasets.py#L653-L923)
+
+Long-form cycles must be nonnegative; capacity need only be finite. C-rate, rest, cycles/day and Wh must be nonnegative; DoD is in [0, 1]. Temperature is only checked for finiteness. Optional missing values become `None`. ISO parsing accepts timezone-naive values; mixing naive and timezone-aware timestamps can fail during comparison. Interval overlap and physical agreement between the history and measured capacity are not validated. Schema version values tag the returned records rather than selecting a separate validated schema implementation. [bcla/datasets.py:272–442](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/datasets.py#L272-L442) [bcla/datasets.py:579–650](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/datasets.py#L579-L650) [bcla/datasets.py:746–923](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/datasets.py#L746-L923)
+
+## Native command-line interfaces
+
+`python -m bcla` and the installed `bcla` entry point call the same function. Both choose synthetic LFP data unless `--csv` is provided. The command always writes `bcla_demo.png`; it has no output-path option. Invalid argparse choices/ranges exit with status 2; some loader/fitting exceptions propagate. [pyproject.toml:54–55](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/pyproject.toml#L54-L55) [bcla/__main__.py:9–178](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/bcla/__main__.py#L9-L178)
+
+| Option | Default / meaning |
+| --- | --- |
+| `--cycles` | 1500 synthetic observations; ignored when CSV supplied |
+| `--model` | `all`; choices `linear`, `power_law`, `logarithmic`, `all` |
+| `--selection` | `validation`; `in-sample` is the alternate all-model selection route |
+| `--validation-fraction` | .2, strictly between 0 and 1; checked even with a single model |
+| `--bootstrap-samples` | 0 disables; otherwise integer ≥20; CLI uses fixed seed 42, 95% confidence and 80% threshold |
+| `--csv` | No path by default; single-cell simple loader, not long-form/history import |
+| `--cycle-col`, `--capacity-col` | `cycle`, `capacity` |
+| `--sep` | Auto comma/tab by suffix |
+| `--no-normalize` | False; leaves capacity in source units, which may conflict with normalized-capacity fit bounds |
+| `-h`, `--help` | Describe parser and exit without analysis |
+
+The checkout-only Oxford CLI accepts `--cell` (default `BMR_cell1`, six allowed IDs), `--validation-fraction` (.2), `--bootstrap-samples` (200) and `--output` (absent means no figure file). `--help` performs no download; analysis downloads approved archive inputs. `load_oxford_cell_from_text` is the offline adapter, `load_oxford_cell` fetches them, and `run_analysis` prints summary metrics and returns `None` after fitting. [examples/oxford_energy_trading.py:207–257](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/examples/oxford_energy_trading.py#L207-L257) [examples/oxford_energy_trading.py:308–442](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/examples/oxford_energy_trading.py#L308-L442)
+
+The notebook generator writes `notebooks/demo.ipynb`; the preview module writes `docs/model_comparison_preview.png`. These are intentional generator commands, not read-only checks. Browser and documentation commands are catalogued separately in [browser interfaces](BROWSER_MODEL_CATALOG.md) and the [maintenance runbook](../maintainer/DOCS_MAINTENANCE_RUNBOOK.md). [build_notebook.py:264–279](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/build_notebook.py#L264-L279) [examples/render_model_preview.py:14–27](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/02ed161bded286dad4b3624961430a564715c782/examples/render_model_preview.py#L14-L27)
