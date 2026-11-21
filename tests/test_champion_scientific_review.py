@@ -125,3 +125,22 @@ def test_lower_fit_bounds_are_reported_without_non_ascii_cli_output(
     assert "β (lower)" in result.active_bounds
     assert "beta (lower)" in result.summary(ascii_only=True)
     assert "β" not in result.summary(ascii_only=True)
+
+
+def test_history_envelopes_do_not_collide_on_delimiter_in_identifiers(
+    tmp_path: Path,
+) -> None:
+    """Two distinct cell/experiment pairs must never share an envelope key."""
+    path = tmp_path / "collision.csv"
+    path.write_text(
+        "cell_id,experiment_id,interval_start,interval_end,temperature_c\n"
+        "A|B,C,2026-01-01T00:00:00Z,2026-01-01T01:00:00Z,20\n"
+        "A,B|C,2026-01-02T00:00:00Z,2026-01-02T01:00:00Z,40\n"
+    )
+    rows, envelopes, _ = load_duty_cycle_history(path)
+    assert len(rows) == 2
+    assert len(envelopes) == 2
+    assert envelopes[r"A\|B|C"]["interval_count"] == 1
+    assert envelopes[r"A|B\|C"]["interval_count"] == 1
+    assert envelopes[r"A\|B|C"]["temperature_c"] == (20.0, 20.0)
+    assert envelopes[r"A|B\|C"]["temperature_c"] == (40.0, 40.0)
