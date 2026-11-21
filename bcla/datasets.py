@@ -392,10 +392,19 @@ def _require_comparable_timezones(values: list[datetime], context: str) -> None:
             )
 
 
+def _history_envelope_key(cell_id: str, experiment_id: str) -> str:
+    """Compose an unambiguous, backwards-compatible string key for history envelopes."""
+    def escape(part: str) -> str:
+        return part.replace("\\", "\\\\").replace("|", "\\|")
+
+    return f"{escape(cell_id)}|{escape(experiment_id)}"
+
+
 def _build_history_envelope(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     by_key: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
-        by_key.setdefault(f"{row['cell_id']}|{row['experiment_id']}", []).append(row)
+        key = _history_envelope_key(str(row["cell_id"]), str(row["experiment_id"]))
+        by_key.setdefault(key, []).append(row)
 
     envelopes: dict[str, dict[str, Any]] = {}
     for key, intervals in by_key.items():
