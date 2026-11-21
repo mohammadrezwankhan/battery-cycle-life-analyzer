@@ -18,3 +18,7 @@
 Require up-to-date CI on final commit, explicit independent scientific and system review, security results, browser QA, and review of release metadata/publication policy. Do not reuse a prior signed artifact's verification as proof of a new build. No credentials were added to repository source or reports.
 
 **Decision: publishing and merging remain disallowed by audit readiness until review and blocking evidence are resolved.**
+
+## Subsequent verified hardening status
+
+Run 44945020410 (commit 0c79e9a8…) passed all five security modes (workflow, secrets, SAST, dependencies, Trivy), all four browser quality modes, Python typing, and Python tests/coverage; Python lint was the sole failed job. Its saved Ruff report identified exactly PTH105 (prefer Path.replace) and four ARG001 unused mock arguments. Source/test lint has been corrected without changing rules; final-head validation is still required. CodeQL, package-distribution smoke and documentation checks passed on the same 0c79e9a8… commit.

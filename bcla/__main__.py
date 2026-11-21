@@ -5,7 +5,6 @@ CLI entry point: ``python -m bcla --help``
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 import tempfile
 from pathlib import Path
@@ -195,7 +194,7 @@ def main() -> None:
         ) as temporary:
             temporary_path = Path(temporary.name)
         fig.savefig(temporary_path, dpi=150, bbox_inches="tight")
-        os.replace(temporary_path, output_path)
+        temporary_path.replace(output_path)
     except (OSError, ValueError) as exc:
         if temporary_path is not None:
             temporary_path.unlink(missing_ok=True)

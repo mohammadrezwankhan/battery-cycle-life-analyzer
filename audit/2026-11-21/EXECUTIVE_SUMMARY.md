@@ -20,3 +20,9 @@
 The empirical three-family fit is **not** a mechanistic electrochemical reliability model. The residual bootstrap does not cover serially dependent/heteroscedastic errors, model-form uncertainty or extrapolation beyond its three-times-observed limit. Six Oxford live-data cases did not execute to numerical completion; no measured-data claim is made. The web lab is a separate deterministic teaching proxy rather than SciPy parity. Supported-browser interaction and accessibility testing remain separately scoped.
 
 **Release recommendation: NO-GO pending the unresolved verification gates.** This report is a reproducible audit snapshot, not an approval to publish v0.3.1 or merge PR #71.
+
+## Subsequent CI and browser evidence
+
+- After the next batch of analytic EOL, future-knee, runtime-version and overwrite tests, commit `0c79e9a8c1793efb993a472c47094d65f9da3d9e` passed the Python 3.9–3.12 matrix: **207 passed, 6 skipped** on Python 3.12 (Actions run 44945020384); candidate wheel, CodeQL and documentation workflows also passed.
+- Full Hardened CI run 44945020410 completed with 11 successful jobs and **one failing Python lint job**. Python coverage gate *passed* after the additional tests; the lint report lists only five style violations from `os.replace` and unused mock arguments. Both are corrected in the next branch commit without weakening any lint or coverage threshold. Its final run must still be observed.
+- A live read-only Chromium QA run https://agent.tinyfish.ai/runs/44e091f0-3488-4e71-835f-71c7d71800ad successfully exercised all four browser learning modules, presets/checkpoints, metric tabs, simulation start/pause/reset, a synthetic CSV export (241 samples), and lesson-config JSON copy/download. The page explained the 1,000-cycle *teaching* horizon and separation from native SciPy fitting. Keyboard, screen-reader, JSON schema and non-Chromium checks were not performed.

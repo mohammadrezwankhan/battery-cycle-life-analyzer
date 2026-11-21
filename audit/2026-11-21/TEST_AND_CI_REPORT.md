@@ -19,3 +19,9 @@
 ## Final commit verification requirement
 
 Subsequent metadata, extra regressions and report changes trigger a new PR head. **Do not reuse a previous green run to certify a later SHA**. Collect final `head_sha`, four Python matrix results, hardened CI results, package validation, CodeQL and skip details after pushing. The audit snapshot is not a claimed final green result for an unrun tree. Performance before/after timings above use distinct test inventories; they cannot support an optimization percentage.
+
+## Follow-up quality evidence and remediation
+
+- Commit `0c79e9a8c1793efb993a472c47094d65f9da3d9e`: GitHub Actions https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44945020384 — 207 passed, 6 skipped, 13 subtests on Python 3.12; the complete 3.9–3.12 matrix passed. Package validation 44945020459, CodeQL 44945020358, docs maintenance 44945020412 and authorship gate 44945020368 all passed.
+- Hardened CI https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44945020410: 11/12 jobs succeeded (all five security; Python types/tests; four browser quality jobs). **Quality/python-lint failed** with Ruff PTH105 for `os.replace` and ARG001 for unused fake-solver `args` and `kwargs` in two tests (five lint diagnostics total). These are implementation lint issues, not spurious tests. Earlier run 44944454664 also failed its numerical line+branch coverage threshold, but the later run's Python coverage job passed after additional tests. No gates were disabled or diluted.
+- The final patch replaces `os.replace` with `Path.replace` and renames the unused fake arguments; re-run the hardened gate and complete all checks before declaring this audit candidate green. The earlier 207-pass result is **not** automatically evidence for the next SHA.

@@ -74,7 +74,7 @@ def test_solver_rejects_insufficient_distinct_cycles() -> None:
 
 
 def test_solver_rejects_unrepresentable_covariance(monkeypatch: pytest.MonkeyPatch) -> None:
-    def invalid_covariance(*args: object, **kwargs: object) -> tuple[np.ndarray, np.ndarray]:
+    def invalid_covariance(*_args: object, **_kwargs: object) -> tuple[np.ndarray, np.ndarray]:
         return np.array([1.0, 0.001]), np.full((2, 2), np.inf)
 
     monkeypatch.setattr(core, "curve_fit", invalid_covariance)
@@ -83,7 +83,7 @@ def test_solver_rejects_unrepresentable_covariance(monkeypatch: pytest.MonkeyPat
 
 
 def test_solver_rejects_nonfinite_estimates(monkeypatch: pytest.MonkeyPatch) -> None:
-    def invalid_estimate(*args: object, **kwargs: object) -> tuple[np.ndarray, np.ndarray]:
+    def invalid_estimate(*_args: object, **_kwargs: object) -> tuple[np.ndarray, np.ndarray]:
         return np.array([np.nan, 0.001]), np.eye(2)
 
     monkeypatch.setattr(core, "curve_fit", invalid_estimate)
@@ -172,7 +172,7 @@ def test_cli_rejects_overwriting_input_dataset(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     input_path = tmp_path / "bcla_demo.png"
-    original = "cycle,capacity\\n0,1.0\\n100,0.95\\n200,0.9\\n"
+    original = "cycle,capacity\n0,1.0\n100,0.95\n200,0.9\n"
     input_path.write_text(original)
     monkeypatch.setattr(sys, "argv", ["bcla", "--csv", str(input_path), "--model", "linear"])
     with pytest.raises(SystemExit) as error:

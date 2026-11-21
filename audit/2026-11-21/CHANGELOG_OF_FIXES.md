@@ -14,3 +14,7 @@
 | `audit/2026-11-21/*` | Publish evidence, risk register, gate decisions and limitations | This audit snapshot |
 
 Compatibility: supported normalized 1D observations and public result structures remain available; invalid inputs that previously slipped through or failed cryptically now raise explicit errors. Numerical EOL estimates become continuous, so results may differ by less than an old grid spacing. The default CSV and PNG names remain unchanged. No new runtime dependencies except using already-installed SciPy's brentq. Deferred: covariance conditioning research, alternative heteroscedastic bootstrap, actual Oxford dataset reproducibility, cross-browser/screen-reader audit, independent reviewer sign-offs, final hardened CI if queued.
+
+## Quality-gate repair evidence
+
+The initial integrated hardening run 44944454664 was not accepted as green: Ruff failed and numerical line/branch coverage fell below its required 95% threshold. Additional reference and guard tests in commit 0c79e9a8… corrected the coverage shortfall without modifying its threshold. The subsequent hardening run 44945020410 passed the Python coverage job but identified five precise Ruff lint errors. Replacing `os.replace` with `Path.replace` and renaming unused mock arguments resolves the reported lint rule violations in source; final CI run is required to prove remediation.
