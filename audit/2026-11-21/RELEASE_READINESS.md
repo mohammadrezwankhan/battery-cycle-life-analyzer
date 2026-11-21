@@ -25,3 +25,7 @@ Confirm final HEAD CI/quality/security/package runs, review all report statement
 
 - Chromium run https://agent.tinyfish.ai/runs/44e091f0-3488-4e71-835f-71c7d71800ad observed the four working modules and deterministic teaching scenarios, with both CSV/JSON export actions and no browser failures. The G6 pass is *functional in tested Chromium scope only*; do not infer Firefox/Safari/screen-reader or full JSON Schema validation.
 - Post-expanded-test Python matrix at 0c79e9a8… passed 207 tests (+ six Oxford skips); package/CodeQL/docs checks also passed. Hardened CI 44945020410 had exactly one failing job: Python lint (five known Ruff diagnostics). Corrected in a follow-up commit; its outcome must be checked before marking G8 PASS. Core coverage gate passed in this run, unlike an earlier branch revision.
+
+## Second-pass release decision
+
+Source-hardening repairs now include six additional confirmed findings. The new tests reproduce eight failures on the original code and pass after repair. Verified 216 native tests and measured Oxford arithmetic on four cells are genuine improvements, not proof of a fully validated lifetime predictor. Two Oxford cells, real-world out-of-domain prediction, independent science/systems review, keyboard and cross-browser accessibility remain outstanding. No branch/tag/release workflow has been bypassed. **The correct overall release verdict remains AUDIT PARTIALLY COMPLETE — VERIFICATION OUTSTANDING.**

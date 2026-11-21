@@ -23,3 +23,7 @@ Late-window RMSE is independently recalculated from the training-only fitted mod
 ## Reproducibility
 
 Run `python -m pytest -v tests/test_scientific_hardening.py tests/test_core.py tests/test_equivalent_full_cycles.py` and `python -m pytest -q -rs` from a wheel or editable checkout. Baseline evidence: https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44869544391 ; red phase: https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44944259925 ; first corrected suite: https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44944454660 . These source-independent constants are deterministic formulas, not observed benchmark results.
+
+## Independent official-source EFC recheck (4/6 cells)
+
+The official Oxford Research Archive record is `https://ora.ox.ac.uk/objects/uuid:9aae61af-2949-49f1-8ad5-6aea448979e5` (DOI: 10.5287/bodleian:gJPdDzvP4, ODbL/DbCL terms). A second analytical implementation used raw archive profile CSV text, stable cycle/time sorting, mean current for duplicate times, clipping negative discharge current to zero at measurement samples, trapezoidal integration in seconds, division by 16 Ah, and the documented near-zero-current final-tail cap. The four rows in `OXFORD_MEASURED_RECHECK.md` match the existing test references within 0.01 EFC and 1e-6 normalized retention. This is source-based arithmetic, not an external-fitted-model performance benchmark; BMR cells remain unverified and the six automated live integration tests are still skipped. No data redistributed.

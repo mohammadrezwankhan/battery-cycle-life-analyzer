@@ -27,3 +27,10 @@ The function interface uses Celsius `temperature_c` and `reference_c`, explicitl
 ## Scope limits
 
 No field deployment, independent chemistry dataset validation, parameter-uncertainty calibration, or observational trial was performed; the website's exponential teaching curve is not the native fitted engine.
+
+## Second-pass scientific integrity improvements
+
+- Optimization-bound indicators: `FitResult.active_bounds` (optional backwards-compatible tuple) records parameters returned at or within a declared 1e-6 relative/1e-8 absolute neighborhood of optimizer bounds, distinguishing constrained estimates from freely fitted exponents and intercepts. `FitResult.summary(ascii_only=True)` uses safe ASCII labels. This is a warning, not evidence of the true parameter's value beyond a bound; it does not solve non-identifiability or guarantee physical realism.
+- A manually constructed `FitResult` with negative fitted fade coefficients is now rejected by `eol_cycle` rather than returning an apparently valid unsupported crossing. Negative late-cycle holdout capacities are rejected before scoring even when all training capacities were valid.
+- Stable model covariance remains necessary but not sufficient for identifiability; independent local experiments with constant trajectories showed that bounded SciPy can produce finite, highly correlated covariance for weakly identified logarithmic parameters. A formal scaled-Jacobian rank/condition study remains future work; an active-bound warning is not a substitute.
+- Four measured Oxford cells were reprocessed independently, using the exact official CSV profiles and documented clipping/duplicate-time rules, while two BMR cells remain unverified. See `OXFORD_MEASURED_RECHECK.md` for reproducible source hashes/URLs and precise numbers. No chemistry-wide predictive claim is made.

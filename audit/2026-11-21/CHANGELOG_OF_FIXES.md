@@ -18,3 +18,12 @@ Compatibility: supported normalized 1D observations and public result structures
 ## Quality-gate repair evidence
 
 The initial integrated hardening run 44944454664 was not accepted as green: Ruff failed and numerical line/branch coverage fell below its required 95% threshold. Additional reference and guard tests in commit 0c79e9a8… corrected the coverage shortfall without modifying its threshold. The subsequent hardening run 44945020410 passed the Python coverage job but identified five precise Ruff lint errors. Replacing `os.replace` with `Path.replace` and renaming unused mock arguments resolves the reported lint rule violations in source; final CI run is required to prove remediation.
+
+## Second-pass source fixes (red phase 44958435880)
+
+- `bcla/datasets.py`: consistent timestamp-awareness guards for long-form per-cell and duty-cycle history intervals; explicit finite-value check after long-form normalization.
+- `bcla/core.py`: reject negative held-out capacity before scoring, expose `FitResult.active_bounds` with ASCII-safe summary warnings, reject malformed manually constructed negative-rate EOL projections.
+- `tests/test_champion_scientific_review.py`: nine adversarial examples, including eight baseline-failing regressions and additional lower-bound ASCII output check.
+- `CHANGELOG.md`, `audit/2026-11-21/*`: transparent provenance, current tests, and residual release blockers. No security, coverage or branch-protection gate was disabled.
+
+A final Ruff N802 spelling correction is committed with this update. The source before that cosmetic correction passed the full 216-test standard matrix and Python-coverage quality gate but failed Ruff; CI on the new commit is mandatory.

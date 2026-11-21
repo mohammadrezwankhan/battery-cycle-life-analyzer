@@ -71,7 +71,7 @@ def test_temporal_validation_rejects_negative_future_capacity() -> None:
         core.temporal_holdout_scores(cycles, retention)
 
 
-def test_solver_reports_active_Q0_and_beta_bounds(
+def test_solver_reports_active_q0_and_beta_bounds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A bound-limited fit is not the same as a freely identified exponent."""

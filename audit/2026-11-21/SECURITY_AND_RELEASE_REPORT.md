@@ -22,3 +22,9 @@ Require up-to-date CI on final commit, explicit independent scientific and syste
 ## Subsequent verified hardening status
 
 Run 44945020410 (commit 0c79e9a8…) passed all five security modes (workflow, secrets, SAST, dependencies, Trivy), all four browser quality modes, Python typing, and Python tests/coverage; Python lint was the sole failed job. Its saved Ruff report identified exactly PTH105 (prefer Path.replace) and four ARG001 unused mock arguments. Source/test lint has been corrected without changing rules; final-head validation is still required. CodeQL, package-distribution smoke and documentation checks passed on the same 0c79e9a8… commit.
+
+## Publication gating clarified after second-pass review
+
+The existing 0.3.0 version was published to PyPI on 2026-10-08 and cannot be overwritten. A new release must be deliberately versioned (for example v0.3.1), with the matching `pyproject.toml`, runtime version, changelog and release tag, and must pass the existing tag-triggered Python matrix, build, trusted-publishing OIDC/environment gate, and post-release installed-wheel smoke. No tag, PyPI publication or GitHub Pages deployment has been created for this unmerged audit branch.
+
+The broader hardened security/quality workflow remains mandatory. Its second-pass run 44958616487 passed all five security categories but failed one Ruff test-function naming rule (N802); final-HEAD confirmation is required before any merge. This report is not a substitute for GitHub reviewer approvals or the actual PyPI/publishing run.

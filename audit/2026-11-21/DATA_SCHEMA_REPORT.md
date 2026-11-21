@@ -14,9 +14,15 @@
 
 - Invalid physical data is rejected rather than projected as physically valid.
 - Unseen operating conditions can trigger *out-of-envelope* interpretation only; recorded metadata are not covariates in the native model and cannot calibrate altered-duty predictions.
-- Mixed timezone-aware and naive timestamps, duplicate readings and unusually encoded CSVs warrant dedicated future property and interoperability testing; not claimed fully verified by existing fixtures.
+- Mixed timezone-aware and timezone-naive timestamp records within a cell or history experiment now raise an actionable ValueError before ordering or span calculations. Correct timezone offsets remain comparable using Python datetime arithmetic. Duplicate readings, mixed timezone conventions across *different* cells/experiments, and unusual encodings warrant further interoperability tests.
 - EFC conventions: measured positive discharge current, clipped before interpolation, seconds to hours, nominal Ah denominator. External Oxford files were not incorporated into this branch.
 
 ## Evidence
 
 New regressions: `tests/test_scientific_hardening.py`; existing: `tests/test_datasets.py`, `tests/test_dataset_domains.py`, `tests/test_equivalent_full_cycles.py`. See https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44944454660 .
+
+## Second-pass verified corrections
+
+`_require_comparable_timezones` checks awareness within each cell envelope, within each history interval, and across all history intervals for a cell/experiment. A mixed aware/naive sequence previously raised an uncontrolled TypeError; the new contract raises a labelled ValueError. `load_cycle_data_long_form(normalize=True)` now rejects non-finite outputs produced by dividing two individually finite capacities (fixture first 1e-6 Ah and later 1e308 Ah). Temporal validation now rejects negative future-only observations before computing holdout RMSE. All changes have red-then-green regression evidence in `tests/test_champion_scientific_review.py`.
+
+The parser does not presume timezone-free values are UTC; it preserves naive values when an entire grouped series is naive. This is a consistency check, not an inferred timezone conversion.
