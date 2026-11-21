@@ -726,6 +726,10 @@ def load_cycle_data(
                     f"{cycle_col}={row.get(cycle_col)!r}, "
                     f"{capacity_col}={row.get(capacity_col)!r}"
                 )
+            if cycle < 0.0:
+                raise ValueError(f"Negative cycle in row {row_i}: {cycle_col}={cycle!r}")
+            if q < 0.0:
+                raise ValueError(f"Negative capacity in row {row_i}: {capacity_col}={q!r}")
             cycles.append(cycle)
             capacity.append(q)
 
@@ -738,7 +742,10 @@ def load_cycle_data(
     if normalize:
         if capacity_arr.size == 0 or np.isclose(capacity_arr[0], 0.0):
             raise ValueError("Cannot normalize because first capacity is zero.")
-        capacity_arr = capacity_arr / capacity_arr[0]
+        with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+            capacity_arr = capacity_arr / capacity_arr[0]
+        if not np.all(np.isfinite(capacity_arr)):
+            raise ValueError("Capacity normalisation produced non-finite values")
 
     return cycles_arr, capacity_arr
 
@@ -808,6 +815,7 @@ def load_cycle_data_long_form(
                     row_i,
                     "capacity",
                     raw_row["capacity"],
+                    non_negative=True,
                 ),
                 "chemistry": _parse_optional_str(
                     row_i,
