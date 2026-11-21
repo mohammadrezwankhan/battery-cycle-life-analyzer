@@ -27,6 +27,13 @@ HERE = Path(__file__).resolve().parent
 LOGGER = logging.getLogger(__name__)
 HOSTED_SANDBOX = Path("/usr/libexec/rezwan-native-sandbox/bin/bwrap")
 HOSTED_POLICY = Path("/etc/apparmor.d/rezwan-native-bwrap")
+PYTHON_DEPENDENCY_CORRECTION = {
+    "path": "cli/setup.py",
+    "original_requirement": "wcmatch~=8.3",
+    "replacement_requirement": "wcmatch==11.2",
+    "original_sha256": "8ecb1591b09bd67afac372ae34b16ebd928e42246b965d0ab59200f6b9640090",
+    "patched_sha256": "9b851042e2b7aa9348a858b3ca95a5bf28904e98654a8232cabc53a3fa72b791",
+}
 
 
 def verify_blob(blob: bytes, expected: str) -> None:
@@ -72,6 +79,21 @@ def extract_source(blob: bytes, destination: Path) -> None:
             if destination.exists():
                 destination.rmdir()
             source.rename(destination)
+
+
+def patch_wcmatch_metadata(
+    metadata: Path, original_sha256: str, patched_sha256: str
+) -> None:
+    """Correct one reviewed Python requirement without accepting source drift."""
+    original = metadata.read_bytes()
+    verify_blob(original, original_sha256)
+    old = b'"wcmatch~=8.3"'
+    new = b'"wcmatch==11.2"'
+    if original.count(old) != 1:
+        raise ValueError("Expected exactly one upstream wcmatch requirement")
+    corrected = original.replace(old, new, 1)
+    verify_blob(corrected, patched_sha256)
+    metadata.write_bytes(corrected)
 
 
 def inspect_osv(report: object, count: int) -> list[dict[str, Any]]:
@@ -455,7 +477,7 @@ def input_identity() -> str:
 
 
 class Builder:
-    """Build upstream targets from locked inputs without changing their constraints."""
+    """Build locked upstream targets with one verified Python metadata correction."""
 
     def __init__(
         self, destination: Path, output: Path, manifest: dict[str, Any]
@@ -550,6 +572,11 @@ class Builder:
                 )
             else:
                 raise ValueError("Native source asset has an unknown distribution type")
+        patch_wcmatch_metadata(
+            self.source / PYTHON_DEPENDENCY_CORRECTION["path"],
+            PYTHON_DEPENDENCY_CORRECTION["original_sha256"],
+            PYTHON_DEPENDENCY_CORRECTION["patched_sha256"],
+        )
         self.timings.append(
             {
                 "name": "source-inputs",
@@ -897,6 +924,7 @@ class Builder:
             json.dumps(
                 {
                     "scanner": self.manifest["scanner"],
+                    "python_dependency_correction": PYTHON_DEPENDENCY_CORRECTION,
                     "installed_packages": self.manifest["installed_packages"],
                     "components": self.manifest["components"],
                     "linked_libraries": linked,

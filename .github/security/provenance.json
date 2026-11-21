@@ -41,7 +41,13 @@
     "https://github.com/actions/runner-images/blob/add4380b0d6685806e9192c33c37359ee0aa4023/images/ubuntu/scripts/build/install-docker.sh",
     "https://github.com/actions/runner-images/blob/add4380b0d6685806e9192c33c37359ee0aa4023/images/ubuntu/scripts/build/install-nodejs.sh",
     "https://github.com/ocaml/opam-repository/blob/7652d3fcd371d9bfed1b9c2498f72dd9c5d4c5b9/packages/ocaml-variants/ocaml-variants.5.5.2%2Boptions/opam",
-    "https://github.com/ocaml/opam-repository/blob/7652d3fcd371d9bfed1b9c2498f72dd9c5d4c5b9/packages/ocaml-option-no-compression/ocaml-option-no-compression.1/opam"
+    "https://github.com/ocaml/opam-repository/blob/7652d3fcd371d9bfed1b9c2498f72dd9c5d4c5b9/packages/ocaml-option-no-compression/ocaml-option-no-compression.1/opam",
+    "https://github.com/advisories/GHSA-53pm-wgxf-c6qf",
+    "https://pypi.org/project/wcmatch/11.2/#files",
+    "https://pypi.org/pypi/wcmatch/11.2/json",
+    "https://github.com/facelessuser/wcmatch/releases/tag/11.2",
+    "https://github.com/opengrep/opengrep/blob/092c80faa0817840228349f93eff12a50fb9cf6b/cli/setup.py",
+    "https://github.com/opengrep/opengrep/blob/092c80faa0817840228349f93eff12a50fb9cf6b/cli/src/semgrep/target_manager.py"
   ],
   "new_actions": {
     "step-security/harden-runner": {
@@ -78,7 +84,7 @@
     "python_packages": 47,
     "native_opam_packages": 182,
     "native_audit_queries": 237,
-    "audit_policy": "Every returned advisory, missing result or unfinished response fails; no ignored IDs or dependency overrides",
+    "audit_policy": "Every returned advisory, missing result or unfinished response fails; no ignored IDs. The explicit Python dependency metadata correction remains fully audited.",
     "platform": "Ubuntu 24.04 x86_64, Python 3.12",
     "cache_policy": "Verified wheel and native libraries only, bound to source/build locks and builder code; fresh dependency audit on reuse",
     "bundled_runtime": "GMP, libev and tree-sitter are pinned Ubuntu/source inputs; the runner supplies its Ubuntu C/C++ runtime",
@@ -107,6 +113,33 @@
         }
       ],
       "verification": "Record ocamlc -config after the frozen import; require version 5.5.2 and a present, unambiguous empty compression_c_libraries field. The original library closure still rejects libzstd and every unknown dependency."
+    },
+    "python_dependency_correction": {
+      "reviewed_on": "2026-11-21",
+      "advisory": "CVE-2026-132276",
+      "alias": "GHSA-53pm-wgxf-c6qf",
+      "upstream_source_sha256": "09b61a7800f612f9774df589d4b297d52b5e39d72ab1639fed9f28f182a7c08a",
+      "path": "cli/setup.py",
+      "original_requirement": "wcmatch~=8.3",
+      "replacement_requirement": "wcmatch==11.2",
+      "original_sha256": "8ecb1591b09bd67afac372ae34b16ebd928e42246b965d0ab59200f6b9640090",
+      "patched_sha256": "9b851042e2b7aa9348a858b3ca95a5bf28904e98654a8232cabc53a3fa72b791",
+      "distribution_sha256": {
+        "wcmatch-11.2.tar.gz": "1605bde546fbde4c063628c7d89eda486909fd4337e51d73a873987fbcb2554c",
+        "wcmatch-11.2-py3-none-any.whl": "952bab83c75c233836007a69550a3a8753cf06964c1eb3b84ff11ad5bff1c272"
+      },
+      "compatibility_scope": "Existing isolated Python 3.12 scanner only. wcmatch 11.2 requires Python >=3.11 and bracex >=3.2; the unchanged lock provides bracex 3.2.1. The upstream wheel metadata is locally corrected, not claimed as an upstream-supported release.",
+      "guard": "Verify the original source archive, verify full setup.py before and after a unique replacement, then retain hash-locked installation and pip check. The build receipt identifies the correction. Source or result drift fails closed before compilation.",
+      "cache": "Builder code and requirements.txt are existing identity inputs; the changed identity requires a fresh native build with the unchanged measured budget.",
+      "local_verification": {
+        "hash_locked_install": "All 47 packages installed with --require-hashes and --no-build-isolation, using the existing hashed bootstrap tools.",
+        "strict_audit": "pip-audit --strict audited all 47 packages with PIP_IGNORE_INSTALLED=1; every vulnerabilities list was empty.",
+        "metadata_graph": "Actual upstream setup.py egg_info rejected the original wcmatch~=8.3 metadata with pip check; the exact corrected metadata passed in the complete locked environment.",
+        "target_selection": "All 30 upstream include/exclude cases passed on 8.5.2 and 11.2. Actual TargetManager hidden/nested Path filtering and Target directory-pruning controls matched under both versions.",
+        "bounded_reject": "wcmatch 11.2 rejected a 255-byte filename under an ordinary multi-star pattern within a two-second process bound. The vulnerable baseline was not subjected to the expensive input.",
+        "contract_suite": "80 scanner contract tests passed, including wrong-source, absent/duplicate requirement and wrong-result rejection.",
+        "limitation": "The native engine and final wheel were not rebuilt locally. The original hosted cold-build and full SAST checks remain required on the final PR head."
+      }
     }
   }
 }
