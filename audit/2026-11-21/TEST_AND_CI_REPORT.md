@@ -34,3 +34,11 @@ Subsequent metadata, extra regressions and report changes trigger a new PR head.
 4. Six live Oxford tests remain skipped due to unavailable official external data in GitHub-hosted CI. A separate manual official-source EFC recheck independently succeeded for four cells, as recorded in `OXFORD_MEASURED_RECHECK.md`. Those manual results do not turn skipped CI tests into passes.
 
 Do not claim a green final integrated tree until all required checks on its actual SHA complete.
+
+## Third-pass red/green test receipt and exact SHA attribution
+
+1. Red: SHA `fd12ed6cd1270b9dd87dbc9c1d11084eac4f8af5`, run [44959344574](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44959344574). Compound identifier collision test failed: `len(envelopes) == 1` where 2 were required; the baseline grouping mixed unrelated cell temperature histories. The test initially exposed the defect; no tests were removed to make it green.
+2. Green source: SHA `1365fb7f2c55b6d0a02c5c217c849892147c8371`, [Python matrix 44959498928](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44959498928) **all four jobs successful**, Python 3.12 `217 passed, 6 skipped, 13 subtests passed in 10.56s`. [Hardened CI 44959498963](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44959498963) passed all 12 security/quality jobs; [CodeQL 44959498971](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44959498971) passed; [candidate distributions 44959499009](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44959499009) passed. Docs 44959498922 and authorship policy 44959498930 passed.
+3. The eight scientific/data regressions from the preceding phase also remain green. The six Oxford live tests remain skipped and should be treated as **incomplete external-data validation**, not six successful measurements. Four out of six archive data files were checked independently outside CI, as documented in `OXFORD_MEASURED_RECHECK.md`.
+
+All first-party CI gates ran without disabling security scans, Ruff, MyPy, test matrices, or branch coverage. This documentation update needs checks on its own final HEAD; recorded green receipts apply to the preceding exact source commit.

@@ -28,3 +28,7 @@ Run 44945020410 (commit 0c79e9a8…) passed all five security modes (workflow, s
 The existing 0.3.0 version was published to PyPI on 2026-10-08 and cannot be overwritten. A new release must be deliberately versioned (for example v0.3.1), with the matching `pyproject.toml`, runtime version, changelog and release tag, and must pass the existing tag-triggered Python matrix, build, trusted-publishing OIDC/environment gate, and post-release installed-wheel smoke. No tag, PyPI publication or GitHub Pages deployment has been created for this unmerged audit branch.
 
 The broader hardened security/quality workflow remains mandatory. Its second-pass run 44958616487 passed all five security categories but failed one Ruff test-function naming rule (N802); final-HEAD confirmation is required before any merge. This report is not a substitute for GitHub reviewer approvals or the actual PyPI/publishing run.
+
+## Third-pass mandatory quality results
+
+On source revision `1365fb7f2c55b6d0a02c5c217c849892147c8371`, GitHub Hardened CI run 44959498963 returned **success** (12 of 12 jobs). The Python supported-version matrix, package build/installed-wheel smoke, CodeQL, documentation, and human-authorship pattern checks also returned successful conclusions. The earlier second-pass Ruff N802 failure was corrected by renaming one test without relaxing lint configuration. **This is successful software verification, not independent scientific certification**. The current documentation commit requires its own CI run; release and protected branch rules are unchanged.

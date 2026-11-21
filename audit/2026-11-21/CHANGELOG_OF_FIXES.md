@@ -27,3 +27,10 @@ The initial integrated hardening run 44944454664 was not accepted as green: Ruff
 - `CHANGELOG.md`, `audit/2026-11-21/*`: transparent provenance, current tests, and residual release blockers. No security, coverage or branch-protection gate was disabled.
 
 A final Ruff N802 spelling correction is committed with this update. The source before that cosmetic correction passed the full 216-test standard matrix and Python-coverage quality gate but failed Ruff; CI on the new commit is mandatory.
+
+## Third-pass P1 data isolation repair
+
+- `bcla/datasets.py` — escape `\\` and pipe symbols in each component of the duty-history envelope composite key. Removes ambiguity between two different `(cell_id, experiment_id)` pairs and prevents cross-cell mixing of temperature, time and interval counts. Ordinary keys, such as `A|test-1`, retain their original names.
+- `tests/test_champion_scientific_review.py` — new source-backed fixture with `("A|B","C")` versus `("A","B|C")`, verifying distinct envelopes and no contamination. Red: Actions 44959344574; green: Actions 44959498928.
+- Audit reports and finding register updated to reflect the confirmed P1 defect, user-visible CI evidence, and strict separation between green CI and outstanding experimental/independent verification.
+- No CI check deleted, skipped, bypassed, renamed, or weakened; package version unchanged at existing published 0.3.0.

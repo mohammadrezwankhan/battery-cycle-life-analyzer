@@ -29,3 +29,7 @@ Confirm final HEAD CI/quality/security/package runs, review all report statement
 ## Second-pass release decision
 
 Source-hardening repairs now include six additional confirmed findings. The new tests reproduce eight failures on the original code and pass after repair. Verified 216 native tests and measured Oxford arithmetic on four cells are genuine improvements, not proof of a fully validated lifetime predictor. Two Oxford cells, real-world out-of-domain prediction, independent science/systems review, keyboard and cross-browser accessibility remain outstanding. No branch/tag/release workflow has been bypassed. **The correct overall release verdict remains AUDIT PARTIALLY COMPLETE — VERIFICATION OUTSTANDING.**
+
+## Final G4 gate remediation and CI snapshot
+
+P1 per-cell history attribution error (two compound identifier pairs collapsing into one validation envelope) was reproduced by test and repaired by escaping each compound-key component. Python 3.9–3.12 tests at 1365fb7 passed; 217 passed and six Oxford skips on Python 3.12. Hardened 12/12 jobs, CodeQL, package build and CLI smoke passed at the identical source SHA. **G4 PASS remains supported within tested contracts**. No native human independent science/systems review occurred, and official BMR archive profiles could not be independently verified. Original G5/G6/G8 limitations remain; no merge or PyPI release is authorized *by a green CI result alone*.

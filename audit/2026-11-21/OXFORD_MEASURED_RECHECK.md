@@ -9,7 +9,7 @@ The source is the University of Oxford Research Archive, record [Oxford energy t
 | SPM_cell1 | `d9880vr050` | `d2801pg45q` | 77,949 | 77,936 | 18 | 13 | 13 | 433.410 | 689.231401 | 0.9835216037 | 689.23 | PASS |
 | SPM_cell2 | `dhx11xf35n` | `dg732d903f` | 76,623 | 76,612 | 16 | 11 | 13 | 964.327 | 689.929320 | 0.9823329549 | 689.93 | PASS |
 | BMR_cell1 | `d7d278t10b` | `dkw52j8142` | — | — | — | — | — | — | — | — | 1558.15 | BLOCKED: archive automated-access rejection |
-| BMR_cell2 | `d4b29b6049` | `dxp68kg34h` | — | — | — | — | — | — | — | — | 1557.65 | NOT VERIFIED |
+| BMR_cell2 | `d4b29b6049` | `dxp68kg34h` | — | — | — | — | — | — | — | — | 1557.65 | BLOCKED: official profile target unreachable |
 
 For each successful row, both EFC is within 0.01 of the historical test value and final normalized capacity is within 1e-6 of its test reference. These are deterministic *source arithmetic* checks; they do not establish predictive EOL accuracy and are not a substitute for an independent scientist’s signoff. The externally sourced `tests/test_oxford_live.py` remain skipped in GitHub Actions; do not transform those skips into passes or bundle the licensed dataset as a workaround. Official archive documentation cautions that bulk automated access may be blocked; respect rate/access limits and obtain permission for larger automated runs. Avoid invented BMR measurements.
 

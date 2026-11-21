@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file.
 - Correct the runtime __version__ attribute to match declared package version 0.3.0 without publishing a new release.
 - Add adversarial regression coverage and audit evidence under audit/2026-11-21/.
 - Second-pass hardening: reject incompatible timestamp awareness and non-finite long-form normalized values; block negative late holdout capacity; surface Q0/power-law beta fitted constraint warnings; reject manually constructed EOL results with invalid degradation parameters.
+- Preserve cell-level duty-cycle history provenance when cell/experiment identifiers contain the delimiter: escape individual key components and verify distinct envelopes with an adversarial regression.
 - Independently recheck four Oxford measured cells against their source archive without redistributing licensed measurements; leave two large BMR cells and cross-browser accessibility explicitly unverified.
 
 ## [0.3.0] - 2026-10-08 (published distribution; see release note)
