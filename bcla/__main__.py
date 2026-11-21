@@ -2,6 +2,8 @@
 CLI entry point: ``python -m bcla --help``
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import sys
@@ -89,7 +91,7 @@ def main() -> None:
         else:
             x, y = synthetic_lfp(cycles=args.cycles)
 
-    except (FileNotFoundError, OSError, ValueError, UnicodeError) as exc:
+    except (OSError, ValueError) as exc:
         parser.error(f"cannot load capacity observations: {exc}")
 
     try:
