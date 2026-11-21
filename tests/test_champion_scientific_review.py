@@ -107,3 +107,21 @@ def test_invalid_manual_eol_fit_does_not_claim_no_crossing() -> None:
     )
     with pytest.raises(ValueError, match="degradation parameters"):
         invalid.eol_cycle()
+
+
+def test_lower_fit_bounds_are_reported_without_non_ascii_cli_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fitted_at_lower_bounds(
+        *_args: object, **_kwargs: object
+    ) -> tuple[np.ndarray, np.ndarray]:
+        return np.array([0.5, 0.001, 0.1]), np.eye(3)
+
+    monkeypatch.setattr(core, "curve_fit", fitted_at_lower_bounds)
+    cycles = np.arange(8, dtype=float)
+    retention = 0.75 - 0.001 * cycles
+    result = core.fit_capacity_fade(cycles, retention, model="power_law")
+    assert "Q0 (lower)" in result.active_bounds
+    assert "β (lower)" in result.active_bounds
+    assert "beta (lower)" in result.summary(ascii_only=True)
+    assert "β" not in result.summary(ascii_only=True)

@@ -381,6 +381,17 @@ def _parse_required_timestamp(
     return parsed
 
 
+def _require_comparable_timezones(values: list[datetime], context: str) -> None:
+    """Reject ambiguous mixed timestamp awareness before datetime comparisons."""
+    if values:
+        naive = values[0].utcoffset() is None
+        if any((value.utcoffset() is None) != naive for value in values[1:]):
+            raise ValueError(
+                f"Mixed timezone-aware and timezone-naive timestamps in {context}; "
+                "supply a consistent timezone convention"
+            )
+
+
 def _build_history_envelope(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     by_key: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
@@ -396,6 +407,7 @@ def _build_history_envelope(rows: list[dict[str, Any]]) -> dict[str, dict[str, A
             datetime.fromisoformat(row["_interval_end_parsed"].replace("Z", "+00:00"))
             for row in intervals
         ]
+        _require_comparable_timezones(start_times + end_times, f"history {key}")
         durations = [
             (row["interval_end_dt"] - row["interval_start_dt"]).total_seconds() / 3600.0
             for row in intervals
@@ -549,6 +561,9 @@ def load_duty_cycle_history(
             row["interval_end_dt"] = datetime.fromisoformat(
                 row["_interval_end_parsed"].replace("Z", "+00:00")
             )
+            _require_comparable_timezones(
+                [row["interval_start_dt"], row["interval_end_dt"]], f"row {row_i}"
+            )
             if row["interval_end_dt"] <= row["interval_start_dt"]:
                 raise ValueError(
                     f"Invalid interval in row {row_i}: interval_end must be after interval_start."
@@ -612,6 +627,7 @@ def _build_validation_envelope(rows: list[dict[str, Any]]) -> dict[str, dict[str
             if row["energy_throughput_wh"] is not None
         ]
 
+        _require_comparable_timezones(timestamps, f"cell_id={cell_id!r}")
         envelopes[cell_id] = {
             "cycle_range": (min(cycles), max(cycles)),
             "cycle_count": len(cycles),
@@ -905,7 +921,13 @@ def load_cycle_data_long_form(
                     f"Cannot normalize because first capacity for cell_id='{cell_id}' is zero."
                 )
             for row in group:
-                row["capacity"] = float(row["capacity"]) / base_capacity
+                with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+                    normalized_capacity = float(row["capacity"]) / base_capacity
+                if not np.isfinite(normalized_capacity):
+                    raise ValueError(
+                        f"Capacity normalisation produced non-finite values for cell_id='{cell_id}'"
+                    )
+                row["capacity"] = normalized_capacity
 
     duty_cycle_history: list[dict[str, Any]] = []
     duty_cycle_history_validation: dict[str, dict[str, Any]] = {}

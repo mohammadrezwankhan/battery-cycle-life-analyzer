@@ -66,6 +66,9 @@ class FitResult:
     cycles: np.ndarray
     observed: np.ndarray
     predicted: np.ndarray
+    # A fit at or near an optimization boundary is not a freely estimated
+    # physical parameter. Preserve this diagnostic without altering old callers.
+    active_bounds: tuple[str, ...] = ()
 
     def project(self, target_cycles: float) -> float:
         """Return predicted normalised capacity at *target_cycles*."""
@@ -102,6 +105,14 @@ class FitResult:
         q0 = float(self.params["Q0"])
         if not np.isfinite(q0) or q0 <= 0.0:
             raise ValueError("EOL requires a finite positive fitted Q0")
+        for parameter_name in _model_pnames(self.model_name):
+            if parameter_name == "Q0":
+                continue
+            value = float(self.params[parameter_name])
+            if not np.isfinite(value) or value < 0.0 or (
+                parameter_name == "β" and value <= 0.0
+            ):
+                raise ValueError("EOL requires finite non-negative degradation parameters")
         if max_cycle == 0.0:
             return None
 
@@ -141,6 +152,13 @@ class FitResult:
         for k, v in self.params.items():
             display_name = parameter_names.get(k, k)
             lines.append(f"  {display_name:<15s}: {v:.6f}")
+        if self.active_bounds:
+            bound_labels = (
+                [item.replace("α", "alpha").replace("β", "beta") for item in self.active_bounds]
+                if ascii_only
+                else self.active_bounds
+            )
+            lines.append("Bound-limited parameters: " + ", ".join(bound_labels))
         return "\n".join(lines)
 
 
@@ -297,6 +315,13 @@ def fit_capacity_fade(
     if not np.all(np.isfinite(predicted)) or not np.isfinite(rmse) or not np.isfinite(r_sq):
         raise ValueError(f"{model} fit returned non-finite predictions or diagnostics")
 
+    active_bounds: list[str] = []
+    for name, value, (lower, upper) in zip(pnames, popt, bounds_list):
+        if np.isclose(value, lower, rtol=1e-6, atol=1e-8):
+            active_bounds.append(f"{name} (lower)")
+        elif np.isclose(value, upper, rtol=1e-6, atol=1e-8):
+            active_bounds.append(f"{name} (upper)")
+
     params = dict(zip(pnames, popt))
     return FitResult(
         model_name=model,
@@ -307,6 +332,7 @@ def fit_capacity_fade(
         cycles=x,
         observed=y,
         predicted=predicted,
+        active_bounds=tuple(active_bounds),
     )
 
 
@@ -340,6 +366,8 @@ def _temporal_arrays(cycles: ArrayLike, capacity: ArrayLike) -> tuple[np.ndarray
         raise ValueError("cycles and capacity must contain only finite values")
     if np.any(x < 0.0):
         raise ValueError("cycles must be non-negative")
+    if np.any(y < 0.0):
+        raise ValueError("capacity observations must be non-negative")
     minimum_unique_cycles = max(len(_model_pnames(name)) + 1 for name in MODEL_REGISTRY) + 2
     if np.unique(x).size < minimum_unique_cycles:
         raise ValueError(
