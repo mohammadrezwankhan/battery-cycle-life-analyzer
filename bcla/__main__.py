@@ -3,7 +3,10 @@ CLI entry point: ``python -m bcla --help``
 """
 
 import argparse
+import os
 import sys
+import tempfile
+from pathlib import Path
 
 
 def main() -> None:
@@ -58,6 +61,8 @@ def main() -> None:
         help="Disable normalization when loading CSV capacity",
     )
     args = parser.parse_args()
+    if args.csv and Path(args.csv).resolve() == Path("bcla_demo.png").resolve():
+        parser.error("refusing to overwrite the input CSV with bcla_demo.png")
     if args.bootstrap_samples != 0 and args.bootstrap_samples < 20:
         parser.error("--bootstrap-samples must be 0 or at least 20")
     if not 0.0 < args.validation_fraction < 1.0:
@@ -72,47 +77,55 @@ def main() -> None:
     )
     from .datasets import load_cycle_data, synthetic_lfp
 
-    if args.csv:
-        x, y = load_cycle_data(
-            args.csv,
-            cycle_col=args.cycle_col,
-            capacity_col=args.capacity_col,
-            sep=args.sep,
-            normalize=not args.no_normalize,
-        )
-    else:
-        x, y = synthetic_lfp(cycles=args.cycles)
-
-    if args.model == "all":
-        if args.selection == "validation":
-            try:
-                selection = select_model_by_validation(
-                    x,
-                    y,
-                    validation_fraction=args.validation_fraction,
-                )
-            except ValueError as exc:
-                parser.error(f"cannot select a model: {exc}")
-            name, best = selection.model_name, selection.fit
-            score = selection.validation_score
-        results = fit_all_models(x, y)
-        for r in results.values():
-            sys.stdout.write(str(r.summary(ascii_only=True) + "\n") + "\n")
-        if args.selection == "validation":
-            sys.stdout.write(
-                str(
-                    f"Selected model: {name} "
-                    f"(held-out RMSE={score.rmse:.5f}, "
-                    f"validation points={score.validation_size})"
-                )
-                + "\n"
+    try:
+        if args.csv:
+            x, y = load_cycle_data(
+                args.csv,
+                cycle_col=args.cycle_col,
+                capacity_col=args.capacity_col,
+                sep=args.sep,
+                normalize=not args.no_normalize,
             )
         else:
-            name, best = best_model(results)
-            sys.stdout.write(str(f"Selected model: {name} (lowest in-sample RMSE)") + "\n")
-    else:
-        best = fit_capacity_fade(x, y, model=args.model)
-        sys.stdout.write(str(best.summary(ascii_only=True)) + "\n")
+            x, y = synthetic_lfp(cycles=args.cycles)
+
+    except (FileNotFoundError, OSError, ValueError, UnicodeError) as exc:
+        parser.error(f"cannot load capacity observations: {exc}")
+
+    try:
+        if args.model == "all":
+            if args.selection == "validation":
+                try:
+                    selection = select_model_by_validation(
+                        x,
+                        y,
+                        validation_fraction=args.validation_fraction,
+                    )
+                except ValueError as exc:
+                    parser.error(f"cannot select a model: {exc}")
+                name, best = selection.model_name, selection.fit
+                score = selection.validation_score
+            results = fit_all_models(x, y)
+            for r in results.values():
+                sys.stdout.write(str(r.summary(ascii_only=True) + "\n") + "\n")
+            if args.selection == "validation":
+                sys.stdout.write(
+                    str(
+                        f"Selected model: {name} "
+                        f"(held-out RMSE={score.rmse:.5f}, "
+                        f"validation points={score.validation_size})"
+                    )
+                    + "\n"
+                )
+            else:
+                name, best = best_model(results)
+                sys.stdout.write(str(f"Selected model: {name} (lowest in-sample RMSE)") + "\n")
+        else:
+            best = fit_capacity_fade(x, y, model=args.model)
+            sys.stdout.write(str(best.summary(ascii_only=True)) + "\n")
+
+    except (ValueError, RuntimeError) as exc:
+        parser.error(f"cannot fit capacity observations: {exc}")
 
     if args.bootstrap_samples:
         try:
@@ -170,7 +183,21 @@ def main() -> None:
     else:
         fig, ax = plt.subplots()
         capacity_fade(best, ax=ax)
-    fig.savefig("bcla_demo.png", dpi=150, bbox_inches="tight")
+    # Write the PNG in the destination directory and replace it atomically.
+    # Never overwrite the dataset named on --csv.
+    output_path = Path("bcla_demo.png")
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=".bcla-plot-", suffix=".png", dir=output_path.parent, delete=False
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+        fig.savefig(temporary_path, dpi=150, bbox_inches="tight")
+        os.replace(temporary_path, output_path)
+    except (OSError, ValueError) as exc:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+        parser.error(f"cannot save plot: {exc}")
     sys.stdout.write("Saved bcla_demo.png" + "\n")
 
 
