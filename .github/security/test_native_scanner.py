@@ -99,6 +99,71 @@ class SourceIntegrityTests(unittest.TestCase):
                 self.assertFalse((Path(temporary) / "outside").exists())
 
 
+class PythonDependencyMetadataTests(unittest.TestCase):
+    """Only reviewed upstream metadata may receive the fixed scanner dependency."""
+
+    original = b'install_requires = ["attrs>=21.3", "wcmatch~=8.3"]\n'
+    corrected = b'install_requires = ["attrs>=21.3", "wcmatch==11.2"]\n'
+
+    def setUp(self) -> None:
+        """The production metadata guard must exist before exercising its boundary."""
+        self.assertTrue(
+            callable(getattr(native_scanner, "patch_wcmatch_metadata", None)),
+            "The verified OpenGrep metadata correction is not implemented",
+        )
+
+    def test_reviewed_metadata_gets_only_the_fixed_dependency(self) -> None:
+        """The supported patch preserves every unrelated upstream metadata byte."""
+        with tempfile.TemporaryDirectory() as temporary:
+            metadata = Path(temporary) / "setup.py"
+            metadata.write_bytes(self.original)
+            native_scanner.patch_wcmatch_metadata(
+                metadata,
+                hashlib.sha256(self.original).hexdigest(),
+                hashlib.sha256(self.corrected).hexdigest(),
+            )
+            self.assertEqual(metadata.read_bytes(), self.corrected)
+
+    def test_changed_upstream_metadata_fails_before_writing(self) -> None:
+        """An upstream source change needs a new review even if the old pin remains."""
+        with tempfile.TemporaryDirectory() as temporary:
+            metadata = Path(temporary) / "setup.py"
+            changed = self.original + b"# unexpected upstream change\n"
+            metadata.write_bytes(changed)
+            with self.assertRaises(RuntimeError):
+                native_scanner.patch_wcmatch_metadata(
+                    metadata,
+                    hashlib.sha256(self.original).hexdigest(),
+                    hashlib.sha256(self.corrected).hexdigest(),
+                )
+            self.assertEqual(metadata.read_bytes(), changed)
+
+    def test_absent_or_duplicate_dependency_fails_before_writing(self) -> None:
+        """A missing or ambiguous old requirement must never be silently replaced."""
+        for source in (b'install_requires = []\n', self.original + self.original):
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as temporary:
+                metadata = Path(temporary) / "setup.py"
+                metadata.write_bytes(source)
+                with self.assertRaises(ValueError):
+                    native_scanner.patch_wcmatch_metadata(
+                        metadata,
+                        hashlib.sha256(source).hexdigest(),
+                        hashlib.sha256(self.corrected).hexdigest(),
+                    )
+                self.assertEqual(metadata.read_bytes(), source)
+
+    def test_unreviewed_result_fails_before_writing(self) -> None:
+        """A wrong target digest cannot authorize even a syntactically valid patch."""
+        with tempfile.TemporaryDirectory() as temporary:
+            metadata = Path(temporary) / "setup.py"
+            metadata.write_bytes(self.original)
+            with self.assertRaises(RuntimeError):
+                native_scanner.patch_wcmatch_metadata(
+                    metadata, hashlib.sha256(self.original).hexdigest(), "0" * 64
+                )
+            self.assertEqual(metadata.read_bytes(), self.original)
+
+
 class AuditCompletenessTests(unittest.TestCase):
     """Every locked component needs an explicit complete vulnerability result."""
 
