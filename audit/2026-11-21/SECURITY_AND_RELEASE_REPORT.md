@@ -1,0 +1,20 @@
+# Security, packaging and release governance
+
+## Security and CI
+
+- Repository `AGENTS.md` requires preserving PR validations, matrices, security gates, workflow permissions, and immutable action SHA pins; no CI gate or timeout was weakened in this PR.
+- Existing workflows include CodeQL and Hardened CI (SAST, secrets, dependencies, Trivy, Python/browser QA); tests.yml covers Python3.9–3.12, and package-validation checks wheels without publishing. Repository supplies `.gitleaks.toml`, `.semgrep.yml`, secure scanner configuration and documented CI runbooks.
+- The first corrected candidate CodeQL completed successfully: https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/runs/44944454689 . Broader hardened CI 44944454664 had not completed when this report was generated. Passing scanners do not demonstrate absence of undiscovered vulnerabilities.
+
+## Distributions
+
+- `pyproject.toml` declares version `0.3.0` and `requires-python >=3.9`; the v0.3.0 Git tag points to `65df747ccf1ff0d2427ab8ba321b4c6839d0ad3b`, not the current main head.
+- Candidate sdist/wheel build, strict twine check, isolated installed-wheel import and CLI/PNG test all passed (run 44944454661). No publishing, package upload, or deployment performed.
+- At baseline runtime `bcla.__version__` was 0.2.0, contradicting project metadata 0.3.0; it is corrected to 0.3.0 on the audit branch, with regression asserting installed distribution parity. No package version bump.
+- Baseline CHANGELOG's 0.3.0 Pending release heading contradicted the preserved maintainer playbook documenting PyPI upload 2026-10-08 and the existing v0.3.0 tag. The audit updates that heading while preserving the distinction that GitHub Releases lacks a v0.3.0 Release record and the PyPI history was not independently re-fetched in this audit.
+
+## Outstanding release controls
+
+Require up-to-date CI on final commit, explicit independent scientific and system review, security results, browser QA, and review of release metadata/publication policy. Do not reuse a prior signed artifact's verification as proof of a new build. No credentials were added to repository source or reports.
+
+**Decision: publishing and merging remain disallowed by audit readiness until review and blocking evidence are resolved.**

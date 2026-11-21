@@ -116,3 +116,71 @@ def test_cli_invalid_csv_raises_usage_error_without_traceback(
     with pytest.raises(SystemExit) as err:
         main()
     assert err.value.code == 2
+
+
+def test_runtime_version_matches_installed_distribution() -> None:
+    from importlib.metadata import version
+
+    import bcla
+
+    assert bcla.__version__ == version("battery-cycle-life-analyzer")
+
+
+@pytest.mark.parametrize(
+    ("model", "params", "last_cycle", "expected"),
+    [
+        ("power_law", {"Q0": 1.0, "α": 0.01, "β": 0.6}, 100.0, (0.2 / 0.01) ** (1.0 / 0.6)),
+        ("logarithmic", {"Q0": 1.0, "a": 0.05, "b": 0.001}, 30000.0, np.expm1(4.0) / 0.001),
+    ],
+)
+def test_known_analytic_eol_for_nonlinear_models(
+    model: str, params: dict[str, float], last_cycle: float, expected: float
+) -> None:
+    cycles = np.array([0.0, last_cycle])
+    observations = np.array([1.0, 0.9])
+    fitted = core.FitResult(
+        model_name=model,
+        params=params,
+        pcov=np.eye(3),
+        rmse=0.0,
+        r_squared=1.0,
+        cycles=cycles,
+        observed=observations,
+        predicted=observations.copy(),
+    )
+    assert fitted.eol_cycle() == pytest.approx(expected, rel=1e-9)
+
+
+def test_future_regime_change_cannot_contaminate_training_predictions() -> None:
+    cycles = np.arange(25, dtype=float)
+    capacities = 1.0 - 0.002 * cycles + 0.0002 * np.sin(cycles)
+    changed = capacities.copy()
+    changed[-5:] -= 0.03  # Future-only degradation knee.
+    scores = core.temporal_holdout_scores(cycles, changed, validation_fraction=0.2)
+    for name in core.MODEL_REGISTRY:
+        trained = core.fit_capacity_fade(cycles[:20], capacities[:20], model=name)
+        parameters = [trained.params[p] for p in core._model_pnames(name)]
+        predicted = core._model_func(name)(cycles[20:], *parameters)
+        expected = float(np.sqrt(np.mean((changed[20:] - predicted) ** 2)))
+        assert scores[name].rmse == pytest.approx(expected, abs=1e-12)
+        assert scores[name].train_size == 20
+        assert scores[name].validation_size == 5
+
+
+def test_cli_rejects_overwriting_input_dataset(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    input_path = tmp_path / "bcla_demo.png"
+    original = "cycle,capacity\\n0,1.0\\n100,0.95\\n200,0.9\\n"
+    input_path.write_text(original)
+    monkeypatch.setattr(sys, "argv", ["bcla", "--csv", str(input_path), "--model", "linear"])
+    with pytest.raises(SystemExit) as error:
+        main()
+    assert error.value.code == 2
+    assert input_path.read_text() == original
+
+
+def test_arrhenius_rejects_negative_activation_energy() -> None:
+    with pytest.raises(ValueError, match="activation_ev must be non-negative"):
+        core.arrhenius_acceleration_factor(45.0, activation_ev=-0.5)

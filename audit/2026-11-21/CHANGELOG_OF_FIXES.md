@@ -1,0 +1,16 @@
+# Audited implementation change log
+
+| Path | Reason | Regression evidence |
+| --- | --- | --- |
+| `bcla/core.py` | Replace fixed-grid EOL approximation with a continuous bracketed root; keep 3× cap and right-censoring | Linear analytical exactness, out-of-cap censor, power/log references |
+| `bcla/core.py` | Use log1p for near-zero logarithm; reject incompatible raw Ah and invalid Q0 guess | Small argument and raw Ah tests |
+| `bcla/core.py` | Enforce positive independent cycle support, nonnegative observations, finite parameters, covariance and diagnostics | Distinct-coordinate, adversarial solver tests |
+| `bcla/core.py` | Reject silent flattening in temporal validation; require nonnegative Arrhenius Ea | 2D input, late-knee and Ea tests |
+| `bcla/datasets.py` | Reject negative cycle/capacity and non-finite normalization; enforce long-form physical capacity | CSV/TSV and long-form invalid input tests |
+| `bcla/__main__.py` | Convert input/fit errors to actionable argparse failures; avoid overwriting input and atomically replace PNG | Missing data and output-collision tests |
+| `bcla/__init__.py` | Match runtime version to installed package metadata (0.3.0), without re-release | Distribution parity regression |
+| `CHANGELOG.md` | Clarify historical 0.3.0 publication note; record unreleased hardening work | Release governance report |
+| `tests/test_scientific_hardening.py` | Deliberately red-then-green offline regression suite | GitHub Actions 44944259925 and 44944454660; final head verification outstanding |
+| `audit/2026-11-21/*` | Publish evidence, risk register, gate decisions and limitations | This audit snapshot |
+
+Compatibility: supported normalized 1D observations and public result structures remain available; invalid inputs that previously slipped through or failed cryptically now raise explicit errors. Numerical EOL estimates become continuous, so results may differ by less than an old grid spacing. The default CSV and PNG names remain unchanged. No new runtime dependencies except using already-installed SciPy's brentq. Deferred: covariance conditioning research, alternative heteroscedastic bootstrap, actual Oxford dataset reproducibility, cross-browser/screen-reader audit, independent reviewer sign-offs, final hardened CI if queued.
