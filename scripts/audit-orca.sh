@@ -3,6 +3,19 @@ set -euo pipefail
 out="$PWD/reader-evidence"
 orca --version > "$out/version.txt"
 google-chrome --version >> "$out/version.txt"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$RUNNER_TEMP/orca-runtime}"
+mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
+pulseaudio --start --exit-idle-time=-1
+pactl load-module module-null-sink sink_name=bcla
+pactl set-default-sink bcla
+pactl info > "$out/audio-sink.txt"
+mkdir -p "$HOME/.config/speech-dispatcher"
+printf '%s\n' 'AudioOutputMethod "pulse"' 'DefaultModule espeak-ng' > "$HOME/.config/speech-dispatcher/speechd.conf"
+speech-dispatcher -d
+timeout 15 spd-say -w "Screen reader audio check"
+parecord --device=bcla.monitor --file-format=wav "$out/narration.wav" &
+recorder=$!
 gsettings set org.gnome.desktop.a11y.applications screen-reader-enabled true
 openbox > "$out/window-manager.log" 2>&1 &
 sleep 2
@@ -30,6 +43,7 @@ for n in $(seq 1 45); do xdotool key Tab; sleep .45; done
 xdotool key Escape Control_L+Home
 sleep 1
 for n in 1 2 3; do xdotool key h; sleep 1; done
+kill -TERM "$recorder" || true
 kill -TERM "$reader"
 wait "$reader" || true
 grep -i 'speech output' "$out/orca.log" > "$out/speech.txt"
