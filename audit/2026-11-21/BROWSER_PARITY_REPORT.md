@@ -1,5 +1,7 @@
 # Browser teaching lab: architecture and parity review
 
+The [22 November verification update](FOLLOWUP_VERIFICATION.md) records the six source rechecks, browser results and current release decision. The observations below describe the earlier 21 November candidate.
+
 ## Four configured lessons
 
 1. Normalize before comparing trajectories.

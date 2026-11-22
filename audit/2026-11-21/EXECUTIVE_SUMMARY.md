@@ -1,5 +1,7 @@
 # Executive summary — scientific hardening audit (2026-11-21)
 
+The [22 November verification update](FOLLOWUP_VERIFICATION.md) records the six source rechecks, browser results and current release decision. The observations below describe the earlier 21 November candidate.
+
 ## Scope and identity
 
 - Repository: https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer ; base branch main at `fe5bb6fca3345f8fa03a025a787bc2e3f9ca2c7d`.

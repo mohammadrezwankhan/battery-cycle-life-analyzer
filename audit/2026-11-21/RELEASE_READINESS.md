@@ -1,5 +1,7 @@
 # Release readiness: mandatory eight gates
 
+The [22 November verification update](FOLLOWUP_VERIFICATION.md) records the six source rechecks, browser results and current release decision. The observations below describe the earlier 21 November candidate.
+
 **Overall: AUDIT PARTIALLY COMPLETE — VERIFICATION OUTSTANDING.** This is a *no-publish/no-merge* verdict, not a certification of scientific predictions. Candidate first green Python matrix and package validation are pinned to `a19276ac57e03d869c74cab7f8631acf0cc8f4df`; later audit/metadata changes require new checks.
 
 | Gate | Status | Evidence and limits |

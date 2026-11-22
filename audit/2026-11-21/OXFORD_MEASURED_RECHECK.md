@@ -1,5 +1,7 @@
 # Independent official Oxford measured-data recheck (2026-11-21)
 
+The [22 November verification update](FOLLOWUP_VERIFICATION.md) records the six source rechecks, browser results and current release decision. The observations below describe the earlier 21 November candidate.
+
 The source is the University of Oxford Research Archive, record [Oxford energy trading battery degradation dataset](https://ora.ox.ac.uk/objects/uuid:9aae61af-2949-49f1-8ad5-6aea448979e5) (DOI 10.5287/bodleian:gJPdDzvP4), published under ODbL/DbCL terms. No official raw profiles or capacity CSVs were committed or redistributed. The independent recomputation read the *official archive files* and used stable ascending time sorting, duplicate-time mean current, clipped positive discharge current, trapezoidal ampere-second/3600 integration, a nominal 16 Ah denominator, and the documented limited near-zero-current final capacity-check tail correction. No calendar-cycle or physics-model extrapolation is involved.
 
 | Official cell | Source profile ID | Capacity ID | Finite profile rows | Unique times | Nonincreasing raw transitions | Duplicate times | Capacity checks | Final unobserved tail (s) | Recomputed discharge EFC | Final retention | Historical target EFC | Recheck |
