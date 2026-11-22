@@ -1,0 +1,74 @@
+[
+  {
+    "engine": "chromium",
+    "width": 320,
+    "overflow": 0,
+    "keyboard": true,
+    "export_schema": true,
+    "dialog_focus": true
+  },
+  {
+    "engine": "chromium",
+    "width": 375,
+    "overflow": 0,
+    "keyboard": true,
+    "export_schema": true,
+    "dialog_focus": true
+  },
+  {
+    "engine": "chromium",
+    "width": 1280,
+    "overflow": 0,
+    "keyboard": true,
+    "export_schema": true,
+    "dialog_focus": true
+  },
+  {
+    "engine": "firefox",
+    "width": 320,
+    "overflow": 0,
+    "keyboard": true,
+    "export_schema": true,
+    "dialog_focus": true
+  },
+  {
+    "engine": "firefox",
+    "width": 375,
+    "overflow": 0,
+    "keyboard": true,
+    "export_schema": true,
+    "dialog_focus": true
+  },
+  {
+    "engine": "firefox",
+    "width": 1280,
+    "overflow": 0,
+    "keyboard": true,
+    "export_schema": true,
+    "dialog_focus": true
+  },
+  {
+    "engine": "webkit",
+    "width": 320,
+    "overflow": 0,
+    "keyboard": true,
+    "export_schema": true,
+    "dialog_focus": true
+  },
+  {
+    "engine": "webkit",
+    "width": 375,
+    "overflow": 0,
+    "keyboard": true,
+    "export_schema": true,
+    "dialog_focus": true
+  },
+  {
+    "engine": "webkit",
+    "width": 1280,
+    "overflow": 0,
+    "keyboard": true,
+    "export_schema": true,
+    "dialog_focus": true
+  }
+]

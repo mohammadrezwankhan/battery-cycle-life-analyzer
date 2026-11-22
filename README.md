@@ -581,6 +581,6 @@ If you use this in published work, please cite the repository:
 
 ## Source-reviewed reference handbook
 
-The [reference handbook](docs/INDEX.md) and its [static reading view](docs/reference/index.html) document source `02ed161bded286dad4b3624961430a564715c782` as a dated 2026-11-19 snapshot. Start with [native interfaces](docs/developer/API_CLI_AND_INTERFACES.md), [equations and limits](docs/math-and-physics/EQUATIONS_AND_DERIVATIONS.md), [executed examples](docs/developer/WORKED_EXAMPLES_AND_LABS.md) or the [verification ledger](docs/maintainer/VERIFICATION_EVIDENCE_LEDGER.md).
+The [reference handbook](docs/HANDBOOK.md) and its [static reading view](docs/reference/index.html) document source `02ed161bded286dad4b3624961430a564715c782` as a dated 2026-11-19 snapshot. Start with [native interfaces](docs/developer/API_CLI_AND_INTERFACES.md), [equations and limits](docs/math-and-physics/EQUATIONS_AND_DERIVATIONS.md), [executed examples](docs/developer/WORKED_EXAMPLES_AND_LABS.md) or the [verification ledger](docs/maintainer/VERIFICATION_EVIDENCE_LEDGER.md).
 
 Maintainers and owners can use the [release playbook](docs/maintainer/CI_CD_AND_RELEASE_PLAYBOOK.md), [recovery runbook](docs/owner/BUS_FACTOR_RECOVERY_RUNBOOK.md), [security guidance](SECURITY.md) and [proposed twelve-month roadmap](ROADMAP.md). Existing examples and historical reports above are preserved; the handbook distinguishes current source behavior, synthetic checks, dated measured-data claims and unexecuted scope.

@@ -10,7 +10,7 @@ from typing import Callable, Literal, Optional
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from scipy.optimize import curve_fit
+from scipy.optimize import brentq, curve_fit
 
 # ── Models (curve_fit convention: x first, then parameters) ──────────────
 
@@ -27,7 +27,7 @@ def _power_law(cycle: np.ndarray, q0: float, alpha: float, beta: float) -> np.nd
 
 def _logarithmic(cycle: np.ndarray, q0: float, a: float, b: float) -> np.ndarray:
     """Q(cycle) = Q0 - a * ln(1 + b * cycle)"""
-    return q0 - a * np.log(1.0 + b * cycle)
+    return q0 - a * np.log1p(b * cycle)
 
 
 # Each entry: (callable, parameter_names, bounds_lower_upper)
@@ -66,6 +66,9 @@ class FitResult:
     cycles: np.ndarray
     observed: np.ndarray
     predicted: np.ndarray
+    # A fit at or near an optimization boundary is not a freely estimated
+    # physical parameter. Preserve this diagnostic without altering old callers.
+    active_bounds: tuple[str, ...] = ()
 
     def project(self, target_cycles: float) -> float:
         """Return predicted normalised capacity at *target_cycles*."""
@@ -85,30 +88,57 @@ class FitResult:
 
     def eol_cycle(self, eol_fraction: float = 0.8) -> Optional[float]:
         """
-        Cycle number where capacity drops to *eol_fraction* of initial.
+        Continuous cycle number where capacity drops to *eol_fraction* of initial.
 
         Returns None if the model never reaches the threshold within
-        three times the largest observed cycle.
+        three times the largest observed cycle. The crossing is solved within
+        that bounded interval rather than rounded up to a search grid.
         """
-        if not 0.0 < eol_fraction < 1.0:
+        if not np.isfinite(eol_fraction) or not 0.0 < eol_fraction < 1.0:
             raise ValueError("eol_fraction must be between 0 and 1")
-        func = _model_func(self.model_name)
-        pnames = _model_pnames(self.model_name)
-        p0 = [self.params[n] for n in pnames]
-        max_cycle = float(self.cycles.max()) * 3.0
+        cycles = np.asarray(self.cycles, dtype=float)
+        if cycles.size == 0 or not np.all(np.isfinite(cycles)) or np.any(cycles < 0.0):
+            raise ValueError("EOL requires finite, non-negative observed cycles")
+        max_cycle = float(np.max(cycles)) * 3.0
         if not np.isfinite(max_cycle):
             raise ValueError("EOL search horizon must be representable as a finite float")
-        q0 = self.params["Q0"]
-
-        candidates = np.linspace(0, max_cycle, 100_000)
-        with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
-            pred = func(candidates, *p0)
-        if not np.all(np.isfinite(pred)):
-            raise ValueError("EOL predictions must be representable as finite floats")
-        idx = np.where(pred <= q0 * eol_fraction)[0]
-        if len(idx) == 0:
+        q0 = float(self.params["Q0"])
+        if not np.isfinite(q0) or q0 <= 0.0:
+            raise ValueError("EOL requires a finite positive fitted Q0")
+        for parameter_name in _model_pnames(self.model_name):
+            if parameter_name == "Q0":
+                continue
+            value = float(self.params[parameter_name])
+            if not np.isfinite(value) or value < 0.0 or (
+                parameter_name == "β" and value <= 0.0
+            ):
+                raise ValueError("EOL requires finite non-negative degradation parameters")
+        if max_cycle == 0.0:
             return None
-        return float(candidates[idx[0]])
+
+        threshold = q0 * eol_fraction
+        # All three registered fade functions are non-increasing with valid
+        # non-negative rate parameters. Check endpoints before root finding so
+        # that a crossing beyond the 3x horizon remains right-censored.
+        capacity_at_start = self.project(0.0)
+        capacity_at_horizon = self.project(max_cycle)
+        if capacity_at_start <= threshold:
+            return 0.0
+        if capacity_at_horizon > threshold:
+            return None
+        if capacity_at_horizon == threshold:
+            return max_cycle
+
+        # Avoid the discretization bias of a 100,000-point search grid; this is
+        # also materially faster for bootstrap refits.
+        root = brentq(
+            lambda cycle: self.project(cycle) - threshold,
+            0.0,
+            max_cycle,
+            xtol=1e-12,
+            rtol=4.0 * np.finfo(float).eps,
+        )
+        return float(root)
 
     def summary(self, *, ascii_only: bool = False) -> str:
         """Return a multi-line summary, optionally safe for legacy terminals."""
@@ -122,6 +152,13 @@ class FitResult:
         for k, v in self.params.items():
             display_name = parameter_names.get(k, k)
             lines.append(f"  {display_name:<15s}: {v:.6f}")
+        if self.active_bounds:
+            bound_labels = (
+                [item.replace("α", "alpha").replace("β", "beta") for item in self.active_bounds]
+                if ascii_only
+                else self.active_bounds
+            )
+            lines.append("Bound-limited parameters: " + ", ".join(bound_labels))
         return "\n".join(lines)
 
 
@@ -215,9 +252,31 @@ def fit_capacity_fade(
         raise ValueError("cycles and capacity must contain only finite values")
     if np.any(x < 0.0):
         raise ValueError("cycles must be non-negative")
+    if np.any(y < 0.0):
+        raise ValueError("capacity observations must be non-negative")
 
+    # A covariance estimate and a fitted intercept require more independent
+    # cycle coordinates than model parameters. Repeated measurements alone do
+    # not identify a degradation trajectory.
+    parameter_count = len(pnames)
+    if np.unique(x).size <= parameter_count:
+        raise ValueError(
+            f"{model} fitting requires at least {parameter_count + 1} distinct cycle values"
+        )
+
+    q0_min, q0_max = bounds_list[0]
+    if float(np.max(y)) > q0_max:
+        raise ValueError(
+            "capacity must be normalised retention for fitting (Q0 <= 1.5); "
+            "raw Ah data must be normalised against an explicit reference capacity"
+        )
     if q0_guess is None:
         q0_guess = float(y.max())
+    if not np.isfinite(q0_guess) or not q0_min <= q0_guess <= q0_max:
+        raise ValueError(
+            f"q0_guess={q0_guess!r} is outside the supported normalised "
+            f"Q0 interval [{q0_min}, {q0_max}]; check capacity units"
+        )
 
     # Build initial guesses
     p0_map: dict[str, float] = {"Q0": q0_guess}
@@ -234,16 +293,34 @@ def fit_capacity_fade(
     p0 = [p0_map[n] for n in pnames]
     bounds = ([b[0] for b in bounds_list], [b[1] for b in bounds_list])
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)
-        popt, pcov = curve_fit(func, x, y, p0=p0, bounds=bounds, maxfev=50_000)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            popt, pcov = curve_fit(func, x, y, p0=p0, bounds=bounds, maxfev=50_000)
+    except (RuntimeError, ValueError, FloatingPointError) as exc:
+        raise ValueError(f"{model} fit failed to converge: {exc}") from exc
 
-    predicted = func(x, *popt)
-    residuals = y - predicted
-    rmse = float(np.sqrt(np.mean(residuals**2)))
-    ss_res = np.sum(residuals**2)
-    ss_tot = np.sum((y - np.mean(y)) ** 2)
-    r_sq = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+    if not np.all(np.isfinite(popt)):
+        raise ValueError(f"{model} solver returned non-finite fitted parameters")
+    if pcov.shape != (parameter_count, parameter_count) or not np.all(np.isfinite(pcov)):
+        raise ValueError(f"{model} solver returned invalid or non-finite parameter covariance")
+
+    with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+        predicted = func(x, *popt)
+        residuals = y - predicted
+        rmse = float(np.sqrt(np.mean(residuals**2)))
+        ss_res = np.sum(residuals**2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r_sq = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+    if not np.all(np.isfinite(predicted)) or not np.isfinite(rmse) or not np.isfinite(r_sq):
+        raise ValueError(f"{model} fit returned non-finite predictions or diagnostics")
+
+    active_bounds: list[str] = []
+    for name, value, (lower, upper) in zip(pnames, popt, bounds_list):
+        if np.isclose(value, lower, rtol=1e-6, atol=1e-8):
+            active_bounds.append(f"{name} (lower)")
+        elif np.isclose(value, upper, rtol=1e-6, atol=1e-8):
+            active_bounds.append(f"{name} (upper)")
 
     params = dict(zip(pnames, popt))
     return FitResult(
@@ -255,6 +332,7 @@ def fit_capacity_fade(
         cycles=x,
         observed=y,
         predicted=predicted,
+        active_bounds=tuple(active_bounds),
     )
 
 
@@ -276,8 +354,10 @@ def best_model(
 
 def _temporal_arrays(cycles: ArrayLike, capacity: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
     """Validate and sort paired observations by cycle for temporal splitting."""
-    x = np.asarray(cycles, dtype=float).ravel()
-    y = np.asarray(capacity, dtype=float).ravel()
+    x = np.asarray(cycles, dtype=float)
+    y = np.asarray(capacity, dtype=float)
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError("cycles and capacity must be one-dimensional")
     if x.size != y.size:
         raise ValueError("cycles and capacity must contain the same number of values")
     if x.size < 6:
@@ -286,6 +366,8 @@ def _temporal_arrays(cycles: ArrayLike, capacity: ArrayLike) -> tuple[np.ndarray
         raise ValueError("cycles and capacity must contain only finite values")
     if np.any(x < 0.0):
         raise ValueError("cycles must be non-negative")
+    if np.any(y < 0.0):
+        raise ValueError("capacity observations must be non-negative")
     minimum_unique_cycles = max(len(_model_pnames(name)) + 1 for name in MODEL_REGISTRY) + 2
     if np.unique(x).size < minimum_unique_cycles:
         raise ValueError(
@@ -556,6 +638,8 @@ def arrhenius_acceleration_factor(
         raise ValueError("temperatures and activation_ev must be finite")
     if temperature_c <= -273.15 or reference_c <= -273.15:
         raise ValueError("temperatures must be above absolute zero")
+    if activation_ev < 0.0:
+        raise ValueError("activation_ev must be non-negative")
     k_b = 8.617333262e-5  # eV / K
     tk = temperature_c + 273.15
     tref = reference_c + 273.15

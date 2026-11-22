@@ -5,7 +5,7 @@
   "title": "Battery cycle-life reference handbook",
   "chapters": [
     {
-      "path": "docs/INDEX.md",
+      "path": "docs/HANDBOOK.md",
       "label": "Battery cycle-life reference handbook",
       "group": "Orientation"
     },
