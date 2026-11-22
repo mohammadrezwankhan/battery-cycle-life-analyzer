@@ -19,7 +19,7 @@ jobs:
       - name: Install the real screen reader and AT-SPI tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends orca dbus-x11 xdotool speech-dispatcher-espeak-ng
+          sudo apt-get install -y --no-install-recommends orca openbox dbus-x11 xdotool speech-dispatcher-espeak-ng
           orca --version
           google-chrome --version
       - name: Exercise the site through Chrome and Orca
