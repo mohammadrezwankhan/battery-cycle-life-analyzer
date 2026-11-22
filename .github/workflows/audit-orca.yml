@@ -1,0 +1,35 @@
+name: One-time G6 screen reader evidence
+on:
+  push:
+    branches: [audit/orca-bcla-g6]
+permissions:
+  contents: read
+jobs:
+  observe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Verify exact candidate site tree
+        run: |
+          git fetch --depth=1 origin 07e4057fcae22f679abb6de306ca0b8af61e8ffe
+          git diff --exit-code 07e4057fcae22f679abb6de306ca0b8af61e8ffe HEAD -- docs
+      - name: Install the real screen reader and AT-SPI tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends orca dbus-x11 xdotool speech-dispatcher-espeak-ng
+          orca --version
+          google-chrome --version
+      - name: Exercise the site through Chrome and Orca
+        run: |
+          mkdir -p reader-evidence
+          export NO_AT_BRIDGE=0 GTK_MODULES=gail:atk-bridge
+          xvfb-run -a dbus-run-session -- bash scripts/audit-orca.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: bcla-orca-observations
+          path: reader-evidence
+          retention-days: 14
