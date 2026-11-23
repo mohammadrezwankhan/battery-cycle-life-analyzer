@@ -4,17 +4,17 @@
 
 Fit empirical battery capacity-fade models in Python with chronological model selection and bounded end-of-life projections.
 
-[Python quick start](#python-quick-start) · [CSV workflow](#quick-start) · [Python source](bcla/core.py) · [Assumptions and limits](#assumptions-and-limitations)
+[Python quick start](#python-quick-start) · [CSV workflow](#quick-start) · [Python source](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/bcla/core.py) · [Assumptions and limits](#assumptions-and-limitations)
 
 ---
 
 <!-- repository-presentation:end -->
 
-![Battery Cycle-Life Lab: original vector system illustration](assets/brand-uniformity/hero-25d.svg)
+![Battery Cycle-Life Lab: original vector system illustration](https://raw.githubusercontent.com/mohammadrezwankhan/battery-cycle-life-analyzer/main/assets/brand-uniformity/hero-25d.svg)
 
 The Python package fits linear, power-law, and logarithmic capacity-fade models with chronological selection and bounded life projections. The browser exercise builds intuition for normalization and stress sensitivity.
 
-**[Native-source lesson guide](docs/portfolio/) · [Offline interactive lab](docs/index.html) · [Lesson configuration](docs/lesson-config.json) · [Configuration schema](docs/lesson-config.schema.json)**
+**[Native-source lesson guide](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/tree/main/docs/portfolio/) · [Offline interactive lab](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/index.html) · [Lesson configuration](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/lesson-config.json) · [Configuration schema](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/lesson-config.schema.json)**
 
 ## Python quick start
 
@@ -39,7 +39,7 @@ The offline browser lab is a separate teaching simulation, not the Python engine
 
 ## Previous animations
 
-[Open the live lab](https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/) → **Previous animations** · [Open the local gallery](docs/animations/index.html)
+[Open the live lab](https://mohammadrezwankhan.github.io/battery-cycle-life-analyzer/) → **Previous animations** · [Open the local gallery](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/animations/index.html)
 
 Earlier animated artwork, waveform demos, and original interactive experiences are linked alongside the current animations.
 
@@ -64,13 +64,13 @@ The browser lab runs offline with no packages, accounts, or live data feeds. Its
 
 ### Continue into the implementation
 
-- [README.md](README.md)
-- [pyproject.toml](pyproject.toml)
-- [bcla/core.py](bcla/core.py)
-- [bcla/**main**.py](bcla/__main__.py)
-- [bcla/datasets.py](bcla/datasets.py)
-- [data/quickstart.csv](data/quickstart.csv)
-- [docs/index.md](docs/index.md)
+- [README.md](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/README.md)
+- [pyproject.toml](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/pyproject.toml)
+- [bcla/core.py](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/bcla/core.py)
+- [bcla/**main**.py](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/bcla/__main__.py)
+- [bcla/datasets.py](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/bcla/datasets.py)
+- [data/quickstart.csv](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/data/quickstart.csv)
+- [docs/index.md](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/index.md)
 
 ### Explore or run the source
 
@@ -93,7 +93,7 @@ The detailed project guide below remains the source for installation, supported 
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://python.org)
 [![Tests](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/actions/workflows/tests.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/notebooks/demo.ipynb)
 
@@ -104,12 +104,12 @@ Designed for battery researchers, energy‑storage engineers, and students who
 need a quick, transparent estimate of cycle‑life without running complex
 physics simulations.
 
-![Linear, power-law, and logarithmic fits to a synthetic NMC demonstration](docs/model_comparison_preview.png)
+![Linear, power-law, and logarithmic fits to a synthetic NMC demonstration](https://raw.githubusercontent.com/mohammadrezwankhan/battery-cycle-life-analyzer/main/docs/model_comparison_preview.png)
 
 *Synthetic-data illustration, not a measured-cell lifetime forecast.*
 Start with the [runnable CSV example](#quick-start), use the
 [Colab notebook](https://colab.research.google.com/github/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/notebooks/demo.ipynb),
-or inspect the [Oxford measured-current example](docs/oxford-energy-trading.md).
+or inspect the [Oxford measured-current example](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/oxford-energy-trading.md).
 
 ## Analysis workflow
 
@@ -125,11 +125,11 @@ while retaining an explicit bound at three times the largest observed cycle.
 - [Analysis workflow](#analysis-workflow) for the model-selection and uncertainty path.
 - [Installation](#installation) and [Quick start](#quick-start) for the shortest runnable path.
 - [Long-form data schema and provenance](#long-form-data-schema-v1--optional-duty-cycle-history-v2) for provenance-aware inputs.
-- [Oxford grid-battery example](docs/oxford-energy-trading.md) for an opt-in,
+- [Oxford grid-battery example](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/oxford-energy-trading.md) for an opt-in,
   licensed real-data workflow on measured discharge EFC.
 - [Assumptions and limitations](#assumptions-and-limitations) before interpreting EOL projections.
 - [Project structure](#project-structure) for notebooks, package code, data, and tests.
-- [Contributing](CONTRIBUTING.md) and [citation metadata](CITATION.cff) for shared or published work.
+- [Contributing](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/CONTRIBUTING.md) and [citation metadata](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/CITATION.cff) for shared or published work.
 
 ---
 
@@ -182,7 +182,7 @@ The terminal prints each model's diagnostics and a `Selected model:` line with
 held-out RMSE. It saves **`bcla_demo.png` in the current directory** and prints
 `Saved bcla_demo.png`; running it again replaces that output image.
 
-[`data/quickstart.csv`](data/quickstart.csv) contains twelve illustrative cycle
+[`data/quickstart.csv`](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/data/quickstart.csv) contains twelve illustrative cycle
 and capacity-in-Ah observations for one synthetic cell, not laboratory data.
 The loader normalizes capacity by its first observation. Model selection uses
 the latest chronological holdout; the plotted full-data fits are diagnostics,
@@ -195,7 +195,7 @@ built-in synthetic LFP series instead of a file, omit `--csv`:
 python -m bcla --model all --bootstrap-samples 500
 ```
 
-The [interactive notebook](notebooks/demo.ipynb) walks through the Python API.
+The [interactive notebook](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/notebooks/demo.ipynb) walks through the Python API.
 For your own single-cell CSV/TSV file, replace the example path:
 
 ```bash
@@ -408,7 +408,7 @@ interval = core.bootstrap_life_projection(
 
 ## Real-data example
 
-The opt-in [Oxford grid-battery walkthrough](docs/oxford-energy-trading.md)
+The opt-in [Oxford grid-battery walkthrough](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/oxford-energy-trading.md)
 downloads original ODbL-licensed current and capacity CSVs from the University
 of Oxford archive, converts measured positive-current throughput to discharge
 equivalent full cycles, and runs the same validation and bounded-projection
@@ -547,7 +547,7 @@ bcla is **complementary** — fit a model to PyBaMM output data, or use it stand
 
 Bug reports, focused feature proposals, documentation improvements, and
 validation datasets with clear provenance are welcome. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing, and pull-request
+[CONTRIBUTING.md](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/CONTRIBUTING.md) for setup, testing, and pull-request
 guidance.
 
 For methodological questions, use
@@ -574,13 +574,13 @@ If you use this in published work, please cite the repository:
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/LICENSE)
 
 </details>
 
 
 ## Source-reviewed reference handbook
 
-The [reference handbook](docs/HANDBOOK.md) and its [static reading view](docs/reference/index.html) document source `02ed161bded286dad4b3624961430a564715c782` as a dated 2026-11-19 snapshot. Start with [native interfaces](docs/developer/API_CLI_AND_INTERFACES.md), [equations and limits](docs/math-and-physics/EQUATIONS_AND_DERIVATIONS.md), [executed examples](docs/developer/WORKED_EXAMPLES_AND_LABS.md) or the [verification ledger](docs/maintainer/VERIFICATION_EVIDENCE_LEDGER.md).
+The [reference handbook](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/HANDBOOK.md) and its [static reading view](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/reference/index.html) document source `02ed161bded286dad4b3624961430a564715c782` as a dated 2026-11-19 snapshot. Start with [native interfaces](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/developer/API_CLI_AND_INTERFACES.md), [equations and limits](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/math-and-physics/EQUATIONS_AND_DERIVATIONS.md), [executed examples](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/developer/WORKED_EXAMPLES_AND_LABS.md) or the [verification ledger](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/maintainer/VERIFICATION_EVIDENCE_LEDGER.md).
 
-Maintainers and owners can use the [release playbook](docs/maintainer/CI_CD_AND_RELEASE_PLAYBOOK.md), [recovery runbook](docs/owner/BUS_FACTOR_RECOVERY_RUNBOOK.md), [security guidance](SECURITY.md) and [proposed twelve-month roadmap](ROADMAP.md). Existing examples and historical reports above are preserved; the handbook distinguishes current source behavior, synthetic checks, dated measured-data claims and unexecuted scope.
+Maintainers and owners can use the [release playbook](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/maintainer/CI_CD_AND_RELEASE_PLAYBOOK.md), [recovery runbook](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/docs/owner/BUS_FACTOR_RECOVERY_RUNBOOK.md), [security guidance](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/SECURITY.md) and [proposed twelve-month roadmap](https://github.com/mohammadrezwankhan/battery-cycle-life-analyzer/blob/main/ROADMAP.md). Existing examples and historical reports above are preserved; the handbook distinguishes current source behavior, synthetic checks, dated measured-data claims and unexecuted scope.
