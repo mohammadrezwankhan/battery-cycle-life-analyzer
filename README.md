@@ -23,7 +23,7 @@ Requires Python 3.9 or newer. Install the published package from
 NumPy, SciPy, and Matplotlib automatically:
 
 ```bash
-python -m pip install battery-cycle-life-analyzer==0.3.0
+python -m pip install battery-cycle-life-analyzer
 python -m bcla --model linear
 ```
 
@@ -141,7 +141,7 @@ Matplotlib; `pip` installs them automatically.
 Install the published package from [PyPI](https://pypi.org/project/battery-cycle-life-analyzer/):
 
 ```bash
-python -m pip install battery-cycle-life-analyzer==0.3.0
+python -m pip install battery-cycle-life-analyzer
 ```
 
 For repository examples, notebooks, or development, clone the source instead:

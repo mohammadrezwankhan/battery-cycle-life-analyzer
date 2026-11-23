@@ -12,7 +12,7 @@ viz         \u2013 Plotting and figure exports
 datasets    \u2013 Load example / built\u2011in cycling data and CSV helpers
 """
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 from .datasets import (
     LongFormCycleData,

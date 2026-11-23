@@ -4,13 +4,20 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-### Scientific hardening audit (2026-11-21; unreleased branch)
+## [0.3.1] - Pending release
+
+### Package and plotting fixes
+
+- Require Pillow 13.0.0 or newer on Python 3.11 and later. Review the legacy Python 3.9 and 3.10 dependency policy before publication.
+- Keep deeply degraded capacity observations and low custom end-of-life thresholds visible in capacity plots.
+
+### Scientific hardening audit (2026-11-21)
 
 - Solve bounded EOL crossings with continuous root finding instead of discretized scan.
 - Harden normalized-capacity fitting, finite solver results and covariance, distinct cycles, and chronological input shapes.
 - Reject negative physical cycle/capacity observations in CSV and long-form loaders.
 - Give actionable CLI errors for invalid inputs and write figures with atomic replacement.
-- Correct the runtime __version__ attribute to match declared package version 0.3.0 without publishing a new release.
+- Keep the runtime version aligned with the distribution metadata.
 - Add adversarial regression coverage and audit evidence under audit/2026-11-21/.
 - Second-pass hardening: reject incompatible timestamp awareness and non-finite long-form normalized values; block negative late holdout capacity; surface Q0/power-law beta fitted constraint warnings; reject manually constructed EOL results with invalid degradation parameters.
 - Preserve cell-level duty-cycle history provenance when cell/experiment identifiers contain the delimiter: escape individual key components and verify distinct envelopes with an adversarial regression.
