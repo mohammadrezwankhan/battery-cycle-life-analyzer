@@ -121,7 +121,6 @@ def capacity_fade(
     ax.set_ylabel("Normalised Capacity")
     ax.set_title(title)
     ax.legend(loc="upper right", fontsize=9)
-    ax.set_ylim(bottom=max(0.65, result.observed.min() - 0.05))
     return ax
 
 
