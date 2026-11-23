@@ -14,6 +14,7 @@ dependencies = [
     "numpy>=1.21",
     "scipy>=1.7",
     "matplotlib>=3.5",
+    "pillow>=13.0.0; python_version >= '3.11'",
 ]
 authors = [
     { name = "Mohammad Rezwan Khan", email = "mohammadrezwankhan@users.noreply.github.com" },
@@ -56,6 +57,10 @@ include = ["bcla*"]
 
 [dependency-groups]
 dev = ["ruff==0.17.5", "mypy==2.4.1", "pytest==9.2.0", "pytest-cov==7.1.0", "hypothesis==6.170.14", "scipy-stubs==1.17.0.2"]
+
+[tool.uv.dependency-groups]
+# The pinned dev group follows the Hardened CI runtime.
+dev = { requires-python = ">=3.12" }
 
 [tool.ruff]
 target-version = "py39"
