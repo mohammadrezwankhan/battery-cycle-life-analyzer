@@ -1,7 +1,7 @@
 <!doctype html>
 <html data-avatar-brand="dashboard" data-flagship-build="f7466fbe997c22e55a431d0120f8da902c510a4729df0f977f2bc759b6b328ab" lang="en" data-flagship-repo="mohammadrezwankhan/battery-cycle-life-analyzer" data-flagship-version="1.0">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; script-src 'self' 'sha256-WR68+7zsnaymTyujgmEWCdVM7rqJqONLpG8fp0RVgEI=' 'sha256-BEUMpTXqvIXPHFLUsRoUJR3udbKS6rZjWcj0Lyy3d/Q='; script-src-attr 'none'; style-src 'self' 'sha256-V8teDOyyBFeiOzXfHzyYIyTdO+YK8RGn8fFLuA716V0=' 'sha256-qcioGt6RpTI7/Gz5CHfzZIuTvFitGT0c4GNh4lkGOOo='; style-src-attr 'none'; img-src 'self' data: blob:; font-src 'self'; media-src 'self'; frame-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; script-src 'self' 'sha256-WR68+7zsnaymTyujgmEWCdVM7rqJqONLpG8fp0RVgEI=' 'sha256-1W7G5z90orPzXJqYGk0EOoHngQ4S5yCkwHtNH3f6LpE='; script-src-attr 'none'; style-src 'self' 'sha256-V8teDOyyBFeiOzXfHzyYIyTdO+YK8RGn8fFLuA716V0=' 'sha256-qcioGt6RpTI7/Gz5CHfzZIuTvFitGT0c4GNh4lkGOOo='; style-src-attr 'none'; img-src 'self' data: blob:; font-src 'self'; media-src 'self'; frame-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
@@ -399,7 +399,8 @@ byId('chart-axis-label').textContent = 'Model time (' + timeUnit + ')';
 byId('equation').textContent = spec.equation + (model.equation && model.equation !== spec.equation ? '\n\n' + model.equation : '');
 const assumptions = [...spec.assumptions,...(Array.isArray(model.assumptions) ? model.assumptions : [])];
 [...new Set(assumptions)].forEach(a => byId('assumptions').append(el('li','',a)));
-byId('time-slider').max = horizon; byId('time-slider').step = horizon / 600; byId('time-slider').setAttribute('aria-label','Model time in ' + timeUnit);
+const timeSteps = 600;
+byId('time-slider').max = timeSteps; byId('time-slider').step = 1; byId('time-slider').setAttribute('aria-label','Model time in ' + timeUnit);
 function setRangeFill(input) { input.style.setProperty('--fill',((Number(input.value)-Number(input.min))/(Number(input.max)-Number(input.min))*100)+'%'); }
 function updateParameterControls() { for (const p of parameterSpecs) { const entry = parameterControls.get(p.key); entry.input.value = params[p.key]; entry.output.textContent = format(params[p.key],Math.min(4,(String(p.step).split('.')[1] || '').length)) + ' ' + p.unit; entry.input.setAttribute('aria-valuetext',entry.output.textContent); setRangeFill(entry.input); } }
 function clearVerification() { updateModuleProgress(); renderChecks(); }
@@ -429,7 +430,7 @@ for (const p of parameterSpecs) {
 function updateReadouts() {
   const values=api.evaluateModel(model.kind,params,time);
   for(const m of metrics) metricNodes.get(m.key).textContent=format(values[m.key],m.decimals);
-  byId('chart-time').textContent='t = '+timeText(time); byId('time-output').textContent=timeText(time); byId('time-slider').value=time; byId('time-slider').setAttribute('aria-valuetext',timeText(time)); setRangeFill(byId('time-slider'));
+  byId('chart-time').textContent='t = '+timeText(time); byId('time-output').textContent=timeText(time); byId('time-slider').value=Math.round(time / horizon * timeSteps); byId('time-slider').setAttribute('aria-valuetext',timeText(time)); setRangeFill(byId('time-slider'));
   const m=metrics.find(m => m.key===activeMetric); canvas.setAttribute('aria-label',m.label+': '+format(values[m.key],m.decimals)+' '+m.unit+' at model time '+timeText(time)+'. Synthetic deterministic data.');
 }
 function paint() {
@@ -462,7 +463,7 @@ function setPlaying(next) { playing=Boolean(next); previousFrame=null; if(frameI
 function frame(stamp) { if(!playing)return;if(previousFrame!==null&&!document.hidden)time=Math.min(horizon,time+Math.min((stamp-previousFrame)/1000,.25)*horizon/90);previousFrame=stamp;flushInteractiveRender();if(time>=horizon){setPlaying(false);toast('Scenario complete. Scrub the timeline or adjust an input.');}else frameId=requestAnimationFrame(frame); }
 byId('play-button').addEventListener('click',()=>setPlaying(!playing));
 byId('reset-button').addEventListener('click',()=>{setPlaying(false);params={...defaultParams};time=0;clearVerification();updateParameterControls();rebuildSeries();updateReadouts();paint();toast('Default inputs restored. Model time reset to zero.');});
-byId('time-slider').addEventListener('input',()=>{setPlaying(false);time=Number(byId('time-slider').value);clearVerification();scheduleInteractiveRender();});
+byId('time-slider').addEventListener('input',()=>{setPlaying(false);time=Number(byId('time-slider').value) / timeSteps * horizon;clearVerification();scheduleInteractiveRender();});
 document.addEventListener('visibilitychange',()=>{previousFrame=null;});
 const reducedChanged=()=>{if(reduceMotion.matches){setPlaying(false);toast('Reduced motion enabled. Use the timeline or Run simulation to explore.');}}; if(reduceMotion.addEventListener)reduceMotion.addEventListener('change',reducedChanged);else if(reduceMotion.addListener)reduceMotion.addListener(reducedChanged);
 if(typeof ResizeObserver!=='undefined')new ResizeObserver(() => scheduleInteractiveRender()).observe(canvas.parentElement);window.addEventListener('resize',() => scheduleInteractiveRender());
