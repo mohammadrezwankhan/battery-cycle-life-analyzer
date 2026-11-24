@@ -49,11 +49,26 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
+
+      - name: Verify release commit is reachable from main
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          checked_out_commit="$(git rev-parse HEAD)"
+          if [ "$checked_out_commit" != "$RELEASE_COMMIT" ]; then
+            echo "Checked-out commit $checked_out_commit does not match release commit $RELEASE_COMMIT" >&2
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$RELEASE_COMMIT" refs/remotes/origin/main; then
+            echo "Release commit $RELEASE_COMMIT is not reachable from origin/main" >&2
+            exit 1
+          fi
 
       - name: Verify release tag matches package version
         env:
