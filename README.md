@@ -18,12 +18,12 @@ The Python package fits linear, power-law, and logarithmic capacity-fade models 
 
 ## Python quick start
 
-Requires Python 3.9 or newer. Install the published package from
-[PyPI](https://pypi.org/project/battery-cycle-life-analyzer/); pip installs
-NumPy, SciPy, and Matplotlib automatically:
+Use Python 3.11 or newer for a new installation from
+[PyPI](https://pypi.org/project/battery-cycle-life-analyzer/). Install Pillow
+13.0.0 or newer alongside BCLA to pick up the security fixes in that release.
 
 ```bash
-python -m pip install battery-cycle-life-analyzer
+python -m pip install --upgrade battery-cycle-life-analyzer "Pillow>=13.0.0"
 python -m bcla --model linear
 ```
 
@@ -135,13 +135,16 @@ while retaining an explicit bound at three times the largest observed cycle.
 
 ## Installation
 
-Requires Python 3.9 or newer. Runtime dependencies are NumPy, SciPy, and
-Matplotlib; `pip` installs them automatically.
+The package metadata allows Python 3.9 or newer. Matplotlib installs Pillow
+as a dependency. Python 3.9 and 3.10 are restricted to older Pillow releases
+that are affected by known advisories. Use Python 3.11 or newer to install
+Pillow 13.0.0 or newer. [Pillow Python support](https://pillow.readthedocs.io/en/stable/installation/python-support.html)
+· [Pillow 13.0.0 security fixes](https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html#security)
 
 Install the published package from [PyPI](https://pypi.org/project/battery-cycle-life-analyzer/):
 
 ```bash
-python -m pip install battery-cycle-life-analyzer
+python -m pip install --upgrade battery-cycle-life-analyzer "Pillow>=13.0.0"
 ```
 
 For repository examples, notebooks, or development, clone the source instead:
