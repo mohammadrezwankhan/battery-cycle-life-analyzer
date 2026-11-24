@@ -39,7 +39,7 @@ def normalize_source_archive(archive: Path, epoch: int) -> None:
 
 def build_distributions(output: Path, environment: dict[str, str], epoch: int) -> dict[str, str]:
     output.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
+    subprocess.run(  # noqa: S603
         [sys.executable, "-m", "build", "--no-isolation", "--outdir", str(output.resolve())],
         env=environment,
         check=True,
@@ -97,7 +97,7 @@ def main() -> None:
         "distribution_sha256": first_hashes,
     }
     encoded = json.dumps(provenance, sort_keys=True)
-    print(f"Release provenance: {encoded}")
+    sys.stdout.write(f"Release provenance: {encoded}\n")
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         with Path(summary).open("a", encoding="utf-8") as report:
