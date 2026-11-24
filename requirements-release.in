@@ -1,0 +1,5 @@
+# Build and validate BCLA release distributions on CPython 3.12.
+build==1.6.1
+setuptools==84.2.1
+twine==7.0.0
+wheel==0.48.0

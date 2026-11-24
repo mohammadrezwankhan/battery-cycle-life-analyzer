@@ -4,6 +4,8 @@ on:
     paths:
       - .github/workflows/**
       - pyproject.toml
+      - requirements-release.in
+      - requirements-release.txt
       - README.md
       - bcla/**
 permissions:
@@ -29,9 +31,11 @@ jobs:
           python-version: '3.12'
       - name: Build and validate the same distributions used by the release job
         run: |
-          python -m pip install build twine
-          python -m build
-          python -m twine check --strict dist/*
+          release_python="$RUNNER_TEMP/bcla-release-tools/bin/python"
+          python -m venv "$RUNNER_TEMP/bcla-release-tools"
+          "$release_python" -m pip install --require-hashes --only-binary=:all: -r requirements-release.txt
+          "$release_python" -m build --no-isolation
+          "$release_python" -m twine check --strict dist/*
       - name: Install candidate wheel and run CLI outside the checkout
         env:
           MPLBACKEND: Agg
