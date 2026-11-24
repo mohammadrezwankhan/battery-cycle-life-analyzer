@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/**
+      - .github/scripts/build_release.py
       - pyproject.toml
       - requirements-release.in
       - requirements-release.txt
@@ -34,8 +35,7 @@ jobs:
           release_python="$RUNNER_TEMP/bcla-release-tools/bin/python"
           python -m venv "$RUNNER_TEMP/bcla-release-tools"
           "$release_python" -m pip install --require-hashes --only-binary=:all: -r requirements-release.txt
-          "$release_python" -m build --no-isolation
-          "$release_python" -m twine check --strict dist/*
+          "$release_python" .github/scripts/build_release.py
       - name: Install candidate wheel and run CLI outside the checkout
         env:
           MPLBACKEND: Agg
